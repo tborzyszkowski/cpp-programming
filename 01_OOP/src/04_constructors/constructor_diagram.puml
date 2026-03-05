@@ -1,0 +1,45 @@
+@startuml constructor_diagram
+
+skinparam backgroundColor #FAFAFA
+skinparam class {
+    BackgroundColor #EDE7F6
+    BorderColor #512DA8
+}
+skinparam sequence {
+    ArrowColor #512DA8
+}
+
+title Konstruktory i Destruktor – klasa Car
+
+class Car {
+    - brand_ : string
+    - model_ : string
+    - year_ : int
+    - fuelConsumption_ : double
+    - serviceHistory_ : int*
+    - serviceCount_ : int
+    --
+    + Car() <<default>>
+    + Car(brand, model, year, fuel) <<parametric>>
+    + Car(brand, model) <<delegating>>
+    + Car(other: Car&) <<copy>>
+    + operator=(other: Car&) : Car&
+    + ~Car() <<destructor>>
+    --
+    + addService(year: int) : void
+    + brand() : string <<const>>
+    + model() : string <<const>>
+    + toString() : string <<const>>
+}
+
+note right of Car
+  Reguła Trzech (Rule of Three):
+  Jeśli definiujesz jedno z:
+    1. destruktora
+    2. konstruktora kopiującego
+    3. operatora przypisania
+  → zdefiniuj WSZYSTKIE trzy!
+end note
+
+/' Diagram sekwencji cyklu życia '/
+@enduml

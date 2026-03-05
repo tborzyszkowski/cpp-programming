@@ -1,0 +1,64 @@
+@startuml copy_diagram
+
+skinparam backgroundColor #FAFAFA
+skinparam class {
+    BackgroundColor #E8F5E9
+    BorderColor #388E3C
+}
+
+title Kopia płytka vs. kopia głęboka
+
+class ShallowBuffer {
+    + size_ : int
+    + data_ : int*  <<ptr>>
+    --
+    + ShallowBuffer(size: int)
+    + ~ShallowBuffer()
+    ..brak konstruktora kopiującego..
+    + set(index, value) : void
+    + print(label) : void
+}
+
+class DeepBuffer {
+    + size_ : int
+    + data_ : int*  <<ptr>>
+    --
+    + DeepBuffer(size: int)
+    + DeepBuffer(other: DeepBuffer&) <<deep copy>>
+    + operator=(other: DeepBuffer&) : DeepBuffer&
+    + ~DeepBuffer()
+    --
+    + set(index, value) : void
+    + print(label) : void
+}
+
+rectangle "Pamięć sterty" as heap1 #FFCDD2 {
+    object "int[] { 0,1,2,3,4 }" as arr1
+}
+
+rectangle "Pamięć sterty" as heap2 #C8E6C9 {
+    object "int[] { 0,1,2,3,4 }" as arr2
+    object "int[] { 0,1,2,3,4 }" as arr3
+}
+
+ShallowBuffer::data_ --> arr1 : buf1.data_
+ShallowBuffer::data_ --> arr1 : buf2.data_ ← BŁĄD!
+
+DeepBuffer::data_ --> arr2 : buf1.data_
+DeepBuffer::data_ --> arr3 : buf2.data_ (nowy blok)
+
+note top of ShallowBuffer
+  Przypadek BŁĘDNY:
+  buf2 = buf1 kopiuje wskaźnik
+  → oba wskazują na TEN SAM blok
+  → podwójny free() → crash!
+end note
+
+note top of DeepBuffer
+  Przypadek PRAWIDŁOWY:
+  buf2 = buf1 tworzy NOWY blok
+  → niezależne kopie danych
+  → bezpieczne destruktory
+end note
+
+@enduml

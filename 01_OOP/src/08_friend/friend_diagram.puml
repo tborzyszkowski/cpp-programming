@@ -1,0 +1,55 @@
+@startuml friend_diagram
+
+skinparam backgroundColor #FAFAFA
+skinparam class {
+    BackgroundColor #FCE4EC
+    BorderColor #C62828
+}
+
+title Zaprzyjaźnione Funkcje i Klasy – Car, Workshop
+
+class Car {
+    - brand_ : string
+    - model_ : string
+    - year_ : int
+    - mileage_ : double
+    - fuelLevel_ : double
+    --
+    + Car(brand, model, year, mileage, fuel)
+    + brand() : string <<const>>
+    + model() : string <<const>>
+    + toString() : string <<const>>
+    --
+    <<friend>> printServiceReport(car, cost)
+    <<friend>> class Workshop
+}
+
+class Workshop {
+    - name_ : string
+    - hourlyRate_ : double
+    --
+    + Workshop(name, rate)
+    + service(car: Car&, hours: double) : void
+    + diagnose(car: const Car&) : void
+}
+
+note "friend function\nprintServiceReport()" as friendFn #FFF9C4
+note "Dostęp do PRYWATNYCH\npól Car:\n  car.brand_\n  car.mileage_\n  car.fuelLevel_" as access #E8F5E9
+
+Car .. friendFn : <<friend>>
+Car .. Workshop : <<friend class>>
+Workshop ..> Car : uses private fields
+
+friendFn .. access
+
+note bottom of Workshop
+  Workshop jest zaprzyjaźniona z Car:
+  → może czytać i modyfikować
+    WSZYSTKIE prywatne pola Car
+  
+  Nie działa w drugą stronę:
+  Car NIE MA dostępu do
+  prywatnych pól Workshop!
+end note
+
+@enduml

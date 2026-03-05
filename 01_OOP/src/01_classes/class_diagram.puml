@@ -1,0 +1,61 @@
+@startuml class_diagram
+
+skinparam classAttributeIconSize 0
+skinparam backgroundColor #FAFAFA
+skinparam class {
+    BackgroundColor #EEF2FF
+    BorderColor #4A5AE0
+    ArrowColor #333
+}
+
+title Klasa i Obiekt – Point oraz Rectangle
+
+class Point {
+    - x_ : double
+    - y_ : double
+    --
+    + Point()
+    + Point(x: double, y: double)
+    + ~Point()
+    --
+    + x() : double <<const>>
+    + y() : double <<const>>
+    + setX(x: double) : void
+    + setY(y: double) : void
+    + distanceFromOrigin() : double <<const>>
+    + toString() : string <<const>>
+}
+
+class Rectangle {
+    - topLeft_ : Point
+    - bottomRight_ : Point
+    - color_ : string
+    --
+    + Rectangle(tl: Point, br: Point, color: string)
+    + ~Rectangle()
+    --
+    + width() : double <<const>>
+    + height() : double <<const>>
+    + area() : double <<const>>
+    + perimeter() : double <<const>>
+    + color() : string <<const>>
+    + setColor(c: string) : void
+    + toString() : string <<const>>
+}
+
+Rectangle "1" o-- "2" Point : zawiera >
+
+note top of Point
+  Klasa = szablon/typ
+  Obiekt = instancja klasy
+  Pola = dane (stan)
+  Metody = zachowanie
+end note
+
+note bottom of Rectangle
+  Kompozycja:
+  Rectangle zawiera
+  dwa obiekty Point
+end note
+
+@enduml

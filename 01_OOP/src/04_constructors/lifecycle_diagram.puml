@@ -1,0 +1,51 @@
+@startuml constructor_lifecycle
+
+skinparam backgroundColor #FAFAFA
+skinparam sequence {
+    ArrowColor #512DA8
+    LifeLineBorderColor #512DA8
+    ParticipantBackgroundColor #EDE7F6
+}
+
+title Cykl życia obiektu Car
+
+participant "main()" as main
+participant "Car c1" as c1
+participant "Car c2 (kopia)" as c2
+participant "Sterta\n(new Car)" as heap
+
+main -> c1 : Car("BMW","M3",2022)\nkonstruktor param.
+activate c1
+c1 --> main : obiekt gotowy
+
+main -> c2 : Car(c1)\nkonstruktor kopiujący
+activate c2
+c2 --> main : kopia gotowa
+
+main -> heap : new Car("Fiat","125p",1975)\n[na stercie]
+activate heap
+
+main -> heap : delete heapCar\n← RĘCZNY DELETE!
+heap -> heap : ~Car() wywołany
+deactivate heap
+
+note right of heap
+  Obiekty na stercie NIE mają
+  automatycznego destruktora!
+  Wymagają ręcznego delete.
+end note
+
+main -> main : wyjście ze scope\nlub koniec main()
+main -> c2 : ~Car() automatycznie
+deactivate c2
+main -> c1 : ~Car() automatycznie
+deactivate c1
+
+note over c1, c2
+  Obiekty na stosie mają
+  AUTOMATYCZNE destruktory
+  (wywołane w odwrotnej kolejności
+  do konstruktorów – LIFO)
+end note
+
+@enduml

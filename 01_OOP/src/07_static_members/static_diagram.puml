@@ -1,0 +1,72 @@
+@startuml static_diagram
+
+skinparam backgroundColor #FAFAFA
+skinparam class {
+    BackgroundColor #E0F2F1
+    BorderColor #00695C
+}
+
+title Składowe statyczne – klasa BankAccount
+
+class BankAccount {
+    ..Per-object (niestatyczne)..
+    - owner_ : string
+    - balance_ : double
+    - accountId_ : int
+    ..Shared (statyczne)..
+    - {static} nextId_ : int = 1000
+    - {static} interestRate_ : double = 0.05
+    - {static} totalAccounts_ : int = 0
+    --
+    + BankAccount(owner, balance)
+    + ~BankAccount()
+    --
+    + deposit(amount) : void
+    + withdraw(amount) : void
+    + applyInterest() : void
+    + toString() : string <<const>>
+    ..Metody statyczne..
+    + {static} getNextId() : int
+    + {static} getInterestRate() : double
+    + {static} getTotalAccounts() : int
+    + {static} setInterestRate(rate) : void
+    + {static} printStats() : void
+}
+
+rectangle "Pamięć procesu" {
+    object "Segment statyczny" as seg #B2DFDB {
+        nextId_ = 1003
+        interestRate_ = 0.03
+        totalAccounts_ = 3
+    }
+    object "alice" as obj1 #E0F7FA {
+        owner_ = "Alice"
+        balance_ = 1060.0
+        accountId_ = 1000
+    }
+    object "bob" as obj2 #E0F7FA {
+        owner_ = "Bob"
+        balance_ = 515.0
+        accountId_ = 1001
+    }
+    object "charlie" as obj3 #E0F7FA {
+        owner_ = "Charlie"
+        balance_ = 0.0
+        accountId_ = 1002
+    }
+}
+
+obj1 ..> seg : wspólna stopa
+obj2 ..> seg : wspólna stopa
+obj3 ..> seg : wspólna stopa
+
+note bottom of seg
+  Pola statyczne istnieją
+  NIEZALEŻNIE od obiektów.
+  Są współdzielone przez
+  wszystkie instancje klasy.
+  Zmiana przez jeden obiekt
+  widoczna we wszystkich!
+end note
+
+@enduml

@@ -1,0 +1,58 @@
+@startuml unit_test_diagram
+
+skinparam backgroundColor #FAFAFA
+skinparam class {
+    BackgroundColor #FFF9E3
+    BorderColor #E0A800
+}
+skinparam note {
+    BackgroundColor #E3F2FD
+}
+
+title Google Test – struktura testów jednostkowych
+
+class Calculator {
+    + add(a: double, b: double) : double
+    + subtract(a: double, b: double) : double
+    + multiply(a: double, b: double) : double
+    + divide(a: double, b: double) : double
+    + isEven(n: int) : bool
+    + factorial(n: int) : long long
+}
+
+abstract class "::testing::Test" as TestBase {
+    # SetUp() : void
+    # TearDown() : void
+}
+
+class CalculatorTest {
+    # calc : Calculator
+    --
+    + TEST_F: AddPositiveNumbers()
+    + TEST_F: AddNegativeNumbers()
+    + TEST_F: DivideByZeroThrows()
+    + TEST_F: FactorialFive()
+    + TEST_F: EvenNumber()
+    + ...()
+}
+
+TestBase <|-- CalculatorTest : extends
+CalculatorTest "1" o-- "1" Calculator : uses
+
+note right of CalculatorTest
+  TEST_F(CalculatorTest, TestName) {
+    EXPECT_EQ(calc.add(2,3), 5);
+    ASSERT_THROW(calc.divide(1,0),
+      std::invalid_argument);
+  }
+end note
+
+note bottom of TestBase
+  Google Test Framework:
+  - TEST() – prosty test
+  - TEST_F() – test z fixture
+  - EXPECT_* – asercja nieprzerywająca
+  - ASSERT_* – asercja przerywająca test
+end note
+
+@enduml

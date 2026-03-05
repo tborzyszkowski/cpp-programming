@@ -1,0 +1,54 @@
+@startuml const_diagram
+
+skinparam backgroundColor #FAFAFA
+skinparam class {
+    BackgroundColor #E8EAF6
+    BorderColor #3949AB
+}
+
+title Stałe metody i obiekty – klasa Circle
+
+class Circle {
+    - radius_ : double
+    - color_ : string
+    --
+    + Circle(radius, color)
+    --
+    + radius() : double <<const>>
+    + color() : string <<const>>
+    + area() : double <<const>>
+    + circumference() : double <<const>>
+    + toString() : string <<const>>
+    + {static} PI : double <<constexpr>>
+    ..non-const (mutators)..
+    + setRadius(r: double) : void
+    + setColor(c: string) : void
+    + scale(factor: double) : void
+}
+
+note right of Circle
+  const metody:
+    - nie modyfikują pól
+    - dostępne przez const obiekt
+    - mogą być wywoływane przez const ref
+
+  non-const metody:
+    - modyfikują obiekt
+    - NIE dostępne przez const obiekt
+    - błąd kompilacji przy const Circle c;
+      c.setRadius(...); ← BŁĄD!
+end note
+
+rectangle "const Circle c2(10.0)" as c2 #FFCDD2 {
+    note as n2
+      Dostępne:
+        c2.radius()         ✅
+        c2.area()           ✅
+        c2.toString()       ✅
+      Niedostępne:
+        c2.setRadius(20)    ❌
+        c2.scale(2)         ❌
+    end note
+}
+
+@enduml

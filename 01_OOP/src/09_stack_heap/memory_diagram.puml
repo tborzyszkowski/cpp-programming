@@ -1,0 +1,65 @@
+@startuml memory_diagram
+
+skinparam backgroundColor #FAFAFA
+
+title Stos i Sterta – zarządzanie pamięcią w C++
+
+rectangle "Pamięć procesu" {
+
+    rectangle "STOS (Stack)\nFIFO, szybki, ograniczony rozmiar" as stack #E3F2FD {
+        rectangle "Ramka stackDemo()" as frame1 #BBDEFB {
+            object "p1: Point3D" as sp1 {
+                id = 1
+                x,y,z = 1,2,3
+            }
+            object "p2: Point3D" as sp2 {
+                id = 2
+                x,y,z = 4,5,6
+            }
+            note as n1 #FFF9C4
+              Automatyczne konstruktory
+              i destruktory (LIFO!)
+            end note
+        }
+    }
+
+    rectangle "STERTA (Heap)\ndynamiczna, nieograniczona, zarządzana ręcznie" as heap #FCE4EC {
+        object "new Point3D(10,...)" as hp1 #FFCDD2 {
+            id = 10
+            x,y,z = 1,2,3
+        }
+        object "new Point3D(100,...)" as hp2 #FFCDD2 {
+            id = 100
+        }
+        note as n2 #FCE4EC
+          Wymagane:
+          delete p1;
+          p1 = nullptr;
+        end note
+    }
+
+    rectangle "Segment statyczny\n(dane + BSS)" as dataSegment #E8F5E9 {
+        object "BankAccount::nextId_" as si1
+        object "BankAccount::totalAccounts_" as si2
+    }
+}
+
+note top of stack
+  Obiekty stosu: automatyczne zarządzanie
+  { Point3D p; }  ← ctor
+  ...
+  }               ← ~dtor AUTOMATYCZNIE
+end note
+
+note top of heap
+  Obiekty sterty: RĘCZNE zarządzanie!
+  Point3D* p = new Point3D(...)  ← ctor
+  ...
+  delete p;  ← ~dtor MUSISZ WYWOŁAĆ
+  p = nullptr;
+  
+  Brak delete = WYCIEK PAMIĘCI!
+  C++ nie ma GC!
+end note
+
+@enduml
