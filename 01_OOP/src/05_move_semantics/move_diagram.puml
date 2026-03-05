@@ -24,28 +24,24 @@ class Buffer {
     + valid() : bool
 }
 
-rectangle "Heap A\n[0,1,2,3,4]" as heapA #FFCCBC
-rectangle "Heap B (kopia)\n[0,1,2,3,4]" as heapB #FFF9C4
-rectangle "Heap A (przejęty)" as heapMove #C8E6C9
-
 note top of Buffer
-  KOPIA: data_ → nowy blok
-  ──────────────────────────
-  b1.data_ ──► Heap A
-  b2.data_ ──► Heap B (kopia)
+  KOPIA: data_ -> nowy blok
+  --------------------------
+  b1.data_ --> Heap A [0,1,2,3,4]
+  b2.data_ --> Heap B (kopia) [0,1,2,3,4]
   Koszt: alokacja + memcpy
 
-  MOVE: data_ przejęty
-  ──────────────────────────
-  b1.data_ → nullptr (invalidated)
-  b3.data_ ──► Heap A (ten sam!)
-  Koszt: brak alokacji – tylko pointer swap
+  MOVE: data_ przejety
+  --------------------------
+  b1.data_ -> nullptr (invalidated)
+  b3.data_ --> Heap A (ten sam!)
+  Koszt: brak alokacji - tylko pointer swap
 end note
 
 note right of Buffer
   noexcept na move ctor/op=
   jest WYMAGANE by std::vector
-  mógł używać move zamiast copy
+  mogl uzywac move zamiast copy
   przy realokacji!
 end note
 

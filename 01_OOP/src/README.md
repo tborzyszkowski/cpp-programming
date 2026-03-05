@@ -87,69 +87,107 @@ Materiały dydaktyczne do wykładu z programowania obiektowego w C++.
 
 ### Wymagania
 
-- Kompilator C++17: **GCC 7+**, **Clang 5+** lub **MSVC 2017+**  
-- (Opcjonalnie) **CMake 3.14+** – dla testów jednostkowych (gtest)
-- (Opcjonalnie) **PlantUML** – do generowania diagramów PNG
+- Kompilator C++17: **GCC 7+** / **MinGW-w64** (Windows), **Clang 5+** lub **MSVC 2017+**
+- **CMake 3.14+** – dla testów jednostkowych (Google Test przez FetchContent)
+- **Java 8+** – do uruchamiania `plantuml.jar`
+- (Opcjonalnie) rozszerzenie VS Code **PlantUML** (`jebbs.plantuml`) – skrypt wykrywa jego `plantuml.jar` automatycznie
 
-### Kompilacja przykładów (g++)
+### Skrypt PowerShell `build.ps1` (zalecane)
+
+Skrypt [`build.ps1`](../../build.ps1) w katalogu głównym projektu automatyzuje wszystkie zadania:
+
+```powershell
+# Z katalogu głównego projektu:
+
+# Wszystko naraz
+.\build.ps1
+
+# Tylko diagramy PlantUML → PNG
+.\build.ps1 -Task diagrams
+
+# Tylko kompilacja + uruchomienie programów C++
+.\build.ps1 -Task programs
+
+# Tylko testy jednostkowe (CMake + Google Test)
+.\build.ps1 -Task tests
+```
+
+Skrypt automatycznie wyszukuje `plantuml.jar` (rozszerzenie VS Code, Chocolatey, katalog projektu) oraz sprawdza dostępność `g++` i `cmake`.
+
+### Kompilacja ręczna (g++)
 
 ```bash
 # Temat 1: Klasy
-g++ -std=c++17 -o 01_classes/classes 01_classes/src/main.cpp
+g++ -std=c++17 -Wall -Wextra -o 01_classes/src/classes.exe 01_classes/src/main.cpp
 
 # Temat 3: Kopie
-g++ -std=c++17 -o 03_copy/copy 03_copy/src/main.cpp
+g++ -std=c++17 -Wall -Wextra -o 03_copy/src/copy.exe 03_copy/src/main.cpp
 
 # Temat 4: Konstruktory
-g++ -std=c++17 -o 04_constructors/ctor 04_constructors/src/main.cpp
+g++ -std=c++17 -Wall -Wextra -o 04_constructors/src/constructors.exe 04_constructors/src/main.cpp
 
 # Temat 5: Move semantics
-g++ -std=c++17 -o 05_move_semantics/move 05_move_semantics/src/main.cpp
+g++ -std=c++17 -Wall -Wextra -o 05_move_semantics/src/move_semantics.exe 05_move_semantics/src/main.cpp
 
 # Temat 6: const
-g++ -std=c++17 -o 06_const/constdemo 06_const/src/main.cpp
+g++ -std=c++17 -Wall -Wextra -o 06_const/src/const_demo.exe 06_const/src/main.cpp
 
 # Temat 7: Static members
-g++ -std=c++17 -o 07_static_members/static_demo 07_static_members/src/main.cpp
+g++ -std=c++17 -Wall -Wextra -o 07_static_members/src/static_members.exe 07_static_members/src/main.cpp
 
 # Temat 8: Friend
-g++ -std=c++17 -o 08_friend/friend 08_friend/src/main.cpp
+g++ -std=c++17 -Wall -Wextra -o 08_friend/src/friend_demo.exe 08_friend/src/main.cpp
 
 # Temat 9: Stack & Heap
-g++ -std=c++17 -o 09_stack_heap/memory 09_stack_heap/src/main.cpp
+g++ -std=c++17 -Wall -Wextra -o 09_stack_heap/src/stack_heap.exe 09_stack_heap/src/main.cpp
 ```
 
 ### Testy jednostkowe (temat 02)
 
+Zalecane – przez skrypt:
+
+```powershell
+.\build.ps1 -Task tests
+```
+
+Ręcznie (MinGW):
+
 ```bash
 cd 02_unit_tests
-cmake -S . -B build
+cmake -S . -B build -G "MinGW Makefiles"
 cmake --build build
 cd build && ctest --output-on-failure
 ```
 
 ### Generowanie diagramów PlantUML
 
+Pliki PNG są generowane automatycznie przez `build.ps1 -Task diagrams`.
+
+Wygenerowane diagramy:
+
+| Plik `.puml` | Wygenerowany `.png` |
+|---|---|
+| `01_classes/class_diagram.puml` | `01_classes/class_diagram.png` |
+| `02_unit_tests/unit_test_diagram.puml` | `02_unit_tests/unit_test_diagram.png` |
+| `03_copy/copy_diagram.puml` | `03_copy/copy_diagram.png` |
+| `04_constructors/constructor_diagram.puml` | `04_constructors/constructor_diagram.png` |
+| `04_constructors/lifecycle_diagram.puml` | `04_constructors/lifecycle_diagram.png` |
+| `05_move_semantics/move_diagram.puml` | `05_move_semantics/move_diagram.png` |
+| `06_const/const_diagram.puml` | `06_const/const_diagram.png` |
+| `07_static_members/static_diagram.puml` | `07_static_members/static_diagram.png` |
+| `08_friend/friend_diagram.puml` | `08_friend/friend_diagram.png` |
+| `09_stack_heap/memory_diagram.puml` | `09_stack_heap/memory_diagram.png` |
+
+Kompilacja ręczna (wymaga Java):
+
 ```bash
-# Zainstaluj PlantUML (Java wymagane):
-# https://plantuml.com/download
+# Pojedynczy plik:
+java -jar plantuml.jar -tpng 01_classes/class_diagram.puml
 
-# Wygeneruj PNG z diagramu:
-plantuml 01_classes/class_diagram.puml
-
-# Wszystkie diagramy naraz (PowerShell):
-Get-ChildItem -Recurse -Filter "*.puml" | ForEach-Object { plantuml $_.FullName }
-```
-
-### Generowanie prezentacji (Pandoc)
-
-```bash
-# Instalacja Pandoc + reveal.js
-# Slajdy HTML:
-pandoc 01_classes/README.md -t revealjs -s -o 01_classes/slides.html
-
-# Slajdy PPTX:
-pandoc 01_classes/README.md -o 01_classes/slides.pptx
+# Wszystkie diagramy (PowerShell):
+Get-ChildItem -Recurse -Filter "*.puml" | ForEach-Object {
+    java -jar plantuml.jar -tpng -o $_.DirectoryName $_.FullName
+}
 ```
 
 ---
@@ -158,5 +196,6 @@ pandoc 01_classes/README.md -o 01_classes/slides.pptx
 
 - [cppreference.com](https://en.cppreference.com) – pełna dokumentacja C++
 - [C++ Core Guidelines](https://isocpp.github.io/CppCoreGuidelines/) – dobre praktyki
-- [Google Test](https://github.com/google/googletest) – framework testów
-- [PlantUML](https://plantuml.com) – generowanie diagramów
+- [Google Test](https://github.com/google/googletest) – framework testów jednostkowych
+- [PlantUML](https://plantuml.com) – generowanie diagramów UML
+- [CMake FetchContent](https://cmake.org/cmake/help/latest/module/FetchContent.html) – pobieranie zależności

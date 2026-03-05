@@ -184,8 +184,12 @@ class Workshop {
 ## Slajd 9: Kompilacja i uruchomienie
 
 ```bash
-g++ -std=c++17 -o friend src/main.cpp
-./friend
+# Ręcznie:
+g++ -std=c++17 -Wall -Wextra -o src/friend_demo.exe src/main.cpp
+src/friend_demo.exe
+
+# Przez skrypt (z katalogu głównego projektu):
+.\build.ps1 -Task programs
 ```
 
 ---
@@ -202,6 +206,36 @@ g++ -std=c++17 -o friend src/main.cpp
 
 ---
 
+## Zadania dla studentów
+
+Zadania (nieco trudniejsze niż przykłady) znajdziesz w katalogu [`exercises/`](exercises/README.md):
+
+| Nr | Temat | Kluczowe zagadnienia |
+|----|-------|----------------------|
+| 1 | [`BankAccount` + `Auditor`](exercises/README.md#zadanie-1--bankaccount-i-auditor) | `friend class`, `operator<<`, `std::vector` |
+| 2 | [`Vector2D` + `Matrix2x2`](exercises/README.md#zadanie-2--vector2d-i-matrix2x2) | `friend` obu klas jednocześnie, forward declaration |
+| 3 | [`TemperatureSensor` + `DataExporter`](exercises/README.md#zadanie-3--temperaturesensor-i-dataexporter) | `friend class`, statystyki, zapis do pliku |
+
+Rozwiązania: [`exercises/solutions/`](exercises/solutions/)
+
+```
+exercises/
+├── README.md                    ← treści zadań
+└── solutions/
+    ├── ex1_bank/
+    │   ├── BankAccount.h
+    │   └── main.cpp
+    ├── ex2_matrix/
+    │   ├── Vector2D.h
+    │   ├── Matrix2x2.h
+    │   └── main.cpp
+    └── ex3_sensor/
+        ├── TemperatureSensor.h
+        └── main.cpp
+```
+
+---
+
 ## Pliki źródłowe
 
 | Plik                              | Opis                              |
@@ -209,3 +243,4 @@ g++ -std=c++17 -o friend src/main.cpp
 | [`src/Car.h`](src/Car.h)         | Car z deklaracjami friend         |
 | [`src/main.cpp`](src/main.cpp)   | Demonstracja zaprzyjaźnienia      |
 | [`friend_diagram.puml`](friend_diagram.puml) | Diagram UML             |
+| [`friend_diagram.png`](friend_diagram.png)   | Wygenerowany diagram PNG |
