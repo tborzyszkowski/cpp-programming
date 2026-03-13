@@ -145,8 +145,8 @@ REGUŁA PIĘCIU (C++11):
 
 ## Slajd 8: Diagram klas i cykl życia
 
-![Diagram](constructor_diagram.puml)  
-![Cykl życia](lifecycle_diagram.puml)
+![Diagram](constructor_diagram.png)  
+![Cykl życia](lifecycle_diagram.png)
 
 ```
 main()          c1 (stos)       c2 (kopia)      heap (sterta)

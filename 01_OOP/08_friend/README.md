@@ -131,7 +131,7 @@ To najczęstsze legalne zastosowanie `friend` w C++.
 
 ## Slajd 7: Diagram klas
 
-![Diagram](friend_diagram.puml)
+![Diagram](friend_diagram.png)
 
 ```
 Car                         Workshop

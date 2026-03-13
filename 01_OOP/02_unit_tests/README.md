@@ -135,7 +135,7 @@ TEST_F(CalculatorTest, EvenNumber) {
 
 ## Slajd 7: Diagram – struktura testów
 
-![Diagram testów](unit_test_diagram.puml)
+![Diagram testów](unit_test_diagram.png)
 
 ```
 CalculatorTest     ← fixture (::testing::Test)

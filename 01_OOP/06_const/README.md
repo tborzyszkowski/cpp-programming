@@ -116,7 +116,7 @@ double area = Circle::PI * r * r;   // bez obiektu Circle!
 
 ## Slajd 7: Diagram klas
 
-![Diagram](const_diagram.puml)
+![Diagram](const_diagram.png)
 
 ```
 Circle

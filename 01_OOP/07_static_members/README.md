@@ -102,7 +102,7 @@ double area = MathConstants::PI * r * r;
 
 ## Slajd 6: Diagram klas i pamięci
 
-![Diagram](static_diagram.puml)
+![Diagram](static_diagram.png)
 
 ```
 Segment statyczny / globalny:

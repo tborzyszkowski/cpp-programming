@@ -175,7 +175,7 @@ auto sp2 = sp1;   // refcount = 2
 
 ## Slajd 9: Diagram pamięci
 
-![Diagram](memory_diagram.puml)
+![Diagram](memory_diagram.png)
 
 ```
 ┌──────────────────────────────────────────────────────────────┐

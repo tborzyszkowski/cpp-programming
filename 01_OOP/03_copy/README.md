@@ -103,7 +103,7 @@ DeepBuffer& operator=(const DeepBuffer& other) {
 
 ## Slajd 6: Diagram klas
 
-![Diagram klas](copy_diagram.puml)
+![Diagram klas](copy_diagram.png)
 
 ```
 ShallowBuffer               DeepBuffer

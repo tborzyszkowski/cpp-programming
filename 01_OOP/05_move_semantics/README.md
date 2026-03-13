@@ -121,7 +121,7 @@ Alternatywa: `= default` / `= delete` zamiast ręcznej implementacji.
 
 ## Slajd 8: Diagram
 
-![Diagram](move_diagram.puml)
+![Diagram](move_diagram.png)
 
 ```
 KOPIA:
