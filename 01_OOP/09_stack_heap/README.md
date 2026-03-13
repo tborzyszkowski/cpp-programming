@@ -250,6 +250,16 @@ g++ -std=c++17 -g -fsanitize=address -o memory src/main.cpp
 
 ---
 
+## Dobre praktyki, antywzorce i zastosowania
+
+- Dobra praktyka: preferuj obiekty na stosie i RAII, a `new/delete` stosuj tylko gdy to konieczne.
+- Dobra praktyka: dla dynamicznej pamieci wybieraj `std::unique_ptr` jako domyslna opcje.
+- Dobra praktyka: zawsze paruj `new[]` z `delete[]` i `new` z `delete`.
+- Antywzorzec: surowe wskazniki jako wlasciciele zasobow bez jasnej odpowiedzialnosci za zwolnienie.
+- Antywzorzec: "zapomniane" `delete`, ktore powoduje ciche wycieki i degradacje wydajnosci.
+- Zastosowanie: systemy embedded, silniki gier, komponenty czasu rzeczywistego i biblioteki C++.
+- Zastosowanie: swiadome zarzadzanie pamiecia w kodzie wydajnosciowym i niskopoziomowym.
+
 ## Pliki źródłowe
 
 | Plik                                  | Opis                              |

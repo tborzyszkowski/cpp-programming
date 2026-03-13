@@ -242,6 +242,16 @@ TEST_F(CalculatorTest, DivideByZeroThrows) {
 
 ---
 
+## Dobre praktyki, antywzorce i zastosowania
+
+- Dobra praktyka: trzymaj testy male i jednoznaczne, jeden scenariusz na jeden test.
+- Dobra praktyka: stosuj nazwy testow opisujace zachowanie, np. `DivideByZeroThrows`.
+- Dobra praktyka: uzywaj `ASSERT_*` gdy dalsze kroki testu nie maja sensu po bledzie.
+- Antywzorzec: testy zalezne od kolejności uruchomienia albo wspolnego stanu globalnego.
+- Antywzorzec: test, ktory sprawdza wiele rzeczy naraz i utrudnia diagnoze porazki.
+- Zastosowanie: testy jednostkowe zabezpieczaja refaktoryzacje i wykrywaja regresje.
+- Zastosowanie: idealne do walidacji bibliotek narzedziowych i krytycznych funkcji obliczeniowych.
+
 ## Pliki źródłowe
 
 | Plik                                    | Opis                           |

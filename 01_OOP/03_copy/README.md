@@ -187,6 +187,16 @@ Obserwuj adresy pamięci w wyjściu – dla kopii głębokiej będą różne.
 
 ---
 
+## Dobre praktyki, antywzorce i zastosowania
+
+- Dobra praktyka: gdy klasa zarzadza zasobem, implementuj pelny zestaw operacji specjalnych.
+- Dobra praktyka: po `delete` ustawiaj wskaznik na `nullptr`, by unikac dangling pointer.
+- Dobra praktyka: preferuj RAII i kontenery STL (`std::vector`, `std::string`) zamiast surowych wskaznikow.
+- Antywzorzec: kopiowanie wskaznika 1:1 (shallow copy) dla obiektow posiadajacych zasoby.
+- Antywzorzec: brak ochrony self-assignment w `operator=` i podwojne zwalnianie pamieci.
+- Zastosowanie: buforowanie danych binarnych, klasy zarzadzajace pamiecia i starszy kod low-level.
+- Zastosowanie: zrozumienie copy vs deep copy jest kluczowe przy integracji z API C.
+
 ## Pliki źródłowe
 
 | Plik                          | Opis                                   |

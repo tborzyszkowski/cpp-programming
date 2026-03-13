@@ -206,6 +206,16 @@ Odkomentuj zakomentowane linie (`// BŁĄD`) by zobaczyć komunikaty kompilatora
 
 ---
 
+## Dobre praktyki, antywzorce i zastosowania
+
+- Dobra praktyka: oznaczaj metody odczytowe jako `const`, by wzmacniac kontrakt API.
+- Dobra praktyka: przekazuj duze obiekty jako `const&` zamiast przez wartosc.
+- Dobra praktyka: uzywaj `constexpr` dla stalych matematycznych i konfiguracji kompilacyjnej.
+- Antywzorzec: castowanie `const` (`const_cast`) w zwyklym kodzie aplikacyjnym.
+- Antywzorzec: brak `const` w interfejsie, co utrudnia uzycie obiektu w kodzie niemutowalnym.
+- Zastosowanie: biblioteki API, modele domenowe i funkcje obliczeniowe bez efektow ubocznych.
+- Zastosowanie: bezpieczne wspoldzielenie obiektow miedzy modulami i watkami (read-only).
+
 ## Pliki źródłowe
 
 | Plik                              | Opis                               |

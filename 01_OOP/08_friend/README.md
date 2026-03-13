@@ -206,6 +206,16 @@ src/friend_demo.exe
 
 ---
 
+## Dobre praktyki, antywzorce i zastosowania
+
+- Dobra praktyka: dawaj `friend` tylko tam, gdzie API publiczne byloby nienaturalne albo nieefektywne.
+- Dobra praktyka: ograniczaj zakres zaprzyjaznienia do konkretnej funkcji zamiast calej klasy.
+- Dobra praktyka: dokumentuj dlaczego `friend` jest potrzebny i jaki zakres dostepu jest wymagany.
+- Antywzorzec: masowe dodawanie `friend` jako skrotu do "obejscia" projektowania interfejsu.
+- Antywzorzec: silne sprzezenie klas przez wzajemne zaprzyjaznianie bez uzasadnienia.
+- Zastosowanie: operatory strumieniowe, helpery serializacji, testy jednostkowe internali.
+- Zastosowanie: algorytmy wymagajace wydajnego dostepu do stanu prywatnego bez kopiowania.
+
 ## Zadania dla studentów
 
 Zadania (nieco trudniejsze niż przykłady) znajdziesz w katalogu [`exercises/`](exercises/README.md):

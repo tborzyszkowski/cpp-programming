@@ -223,6 +223,16 @@ g++ -std=c++17 -o static_members src/main.cpp
 
 ---
 
+## Dobre praktyki, antywzorce i zastosowania
+
+- Dobra praktyka: statyczne pola stosuj tylko dla danych wspolnych dla wszystkich instancji.
+- Dobra praktyka: pilnuj enkapsulacji statycznych pol przez metody klasowe.
+- Dobra praktyka: preferuj `inline static` (C++17) dla prostszej definicji w naglowku.
+- Antywzorzec: naduzywanie statycznego stanu globalnego i ukryte zaleznosci miedzy modulami.
+- Antywzorzec: traktowanie Singletona jako domyslnego rozwiazania kazdego problemu.
+- Zastosowanie: liczniki obiektow, cache konfiguracji, stale parametry wspolne.
+- Zastosowanie: fabryki i rejestry typow, gdy stan ma byc wspolny dla calej klasy.
+
 ## Pliki źródłowe
 
 | Plik                                      | Opis                               |

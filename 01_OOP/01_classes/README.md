@@ -208,6 +208,15 @@ Oczekiwane wyjście zawiera komunikaty z konstruktorów i destruktorów – dzi�
 
 ---
 
+## Dobre praktyki, antywzorce i zastosowania
+
+- Dobra praktyka: trzymaj pola jako `private` i wystawiaj stabilne API przez metody publiczne.
+- Dobra praktyka: waliduj dane wejsciowe w setterach i konstruktorach, np. odrzucaj niepoprawne wspolrzedne.
+- Antywzorzec: publiczne pola modyfikowane z wielu miejsc, bo to utrudnia kontrolowanie stanu obiektu.
+- Antywzorzec: logika biznesowa rozrzucona po `main.cpp` zamiast zamknieta w klasie.
+- Zastosowanie: `Point` i `Rectangle` to prosty model danych 2D, np. do grafiki, GIS albo gier.
+- Zastosowanie: podobna struktura klas dziala w DTO/modelach domenowych w aplikacjach backendowych.
+
 ## Pliki źródłowe
 
 | Plik                       | Opis                                  |
