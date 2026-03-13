@@ -1,6 +1,7 @@
 #pragma once
 #include <stdexcept>
-#include <string> – prosta implementacja do demonstracji testów jednostkowych
+#include <string> 
+// prosta implementacja do demonstracji testów jednostkowych
 class Calculator {
 public:
     // Dodawanie
