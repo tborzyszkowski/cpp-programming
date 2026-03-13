@@ -100,14 +100,14 @@ function Invoke-Programs {
 
     # Każdy podkatalog z main.cpp (poza 02_unit_tests)
     $programs = @(
-        @{ Dir = "01_OOP\src\01_classes\src";      Name = "classes";       Files = "main.cpp" },
-        @{ Dir = "01_OOP\src\03_copy\src";          Name = "copy";          Files = "main.cpp" },
-        @{ Dir = "01_OOP\src\04_constructors\src";  Name = "constructors";  Files = "main.cpp" },
-        @{ Dir = "01_OOP\src\05_move_semantics\src";Name = "move_semantics";Files = "main.cpp" },
-        @{ Dir = "01_OOP\src\06_const\src";         Name = "const_demo";    Files = "main.cpp" },
-        @{ Dir = "01_OOP\src\07_static_members\src";Name = "static_members";Files = "main.cpp" },
-        @{ Dir = "01_OOP\src\08_friend\src";        Name = "friend_demo";   Files = "main.cpp" },
-        @{ Dir = "01_OOP\src\09_stack_heap\src";    Name = "stack_heap";    Files = "main.cpp" }
+        @{ Dir = "01_OOP\01_classes\src";      Name = "classes";       Files = "main.cpp" },
+        @{ Dir = "01_OOP\03_copy\src";          Name = "copy";          Files = "main.cpp" },
+        @{ Dir = "01_OOP\04_constructors\src";  Name = "constructors";  Files = "main.cpp" },
+        @{ Dir = "01_OOP\05_move_semantics\src";Name = "move_semantics";Files = "main.cpp" },
+        @{ Dir = "01_OOP\06_const\src";         Name = "const_demo";    Files = "main.cpp" },
+        @{ Dir = "01_OOP\07_static_members\src";Name = "static_members";Files = "main.cpp" },
+        @{ Dir = "01_OOP\08_friend\src";        Name = "friend_demo";   Files = "main.cpp" },
+        @{ Dir = "01_OOP\09_stack_heap\src";    Name = "stack_heap";    Files = "main.cpp" }
     )
 
     $gpp = Get-Command "g++" -ErrorAction SilentlyContinue
@@ -165,7 +165,7 @@ function Invoke-Tests {
     }
 
     $testProjects = @(
-        @{ Dir = "01_OOP\src\02_unit_tests"; Name = "CalculatorTests" }
+        @{ Dir = "01_OOP\02_unit_tests"; Name = "CalculatorTests" }
     )
 
     foreach ($tp in $testProjects) {
