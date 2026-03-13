@@ -81,7 +81,7 @@ void setX(double x) {
 
 ## Slajd 6: Diagram klas UML
 
-![Diagram klas](class_diagram.puml)
+![Diagram klas](class_diagram.png)
 
 <!-- Wygeneruj PNG z PlantUML: plantuml class_diagram.puml -->
 

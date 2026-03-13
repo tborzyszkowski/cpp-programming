@@ -21,7 +21,7 @@ Materiały dydaktyczne do wykładu z programowania obiektowego w C++.
 ## Struktura katalogów
 
 ```
-01_OOP/src/
+01_OOP/
 ├── 01_classes/
 │   ├── README.md               ← materiał wykładowy
 │   ├── class_diagram.puml      ← diagram PlantUML
@@ -94,7 +94,7 @@ Materiały dydaktyczne do wykładu z programowania obiektowego w C++.
 
 ### Skrypt PowerShell `build.ps1` (zalecane)
 
-Skrypt [`build.ps1`](../../build.ps1) w katalogu głównym projektu automatyzuje wszystkie zadania:
+Skrypt [`build.ps1`](../build.ps1) w katalogu głównym projektu automatyzuje wszystkie zadania:
 
 ```powershell
 # Z katalogu głównego projektu:
