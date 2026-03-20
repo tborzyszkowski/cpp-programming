@@ -58,6 +58,33 @@ TEST_F(CalculatorTest, AddPositiveNumbers) {
 
 ---
 
+### Prosty test (Makro TEST)
+
+Jest to samodzielny przypadek testowy, który nie wymaga żadnego przygotowania zewnętrznego środowiska
+
+- **Zastosowanie**: Testowanie prostych funkcji (np. matematycznych), metod statycznych lub klas, które nie wymagają skomplikowanej inicjalizacji
+- **Struktura**: `TEST(NazwaZestawu, NazwaTestu) { ... }`
+- **Charakterystyka**: Każdy test jest całkowicie odizolowany. Jeśli potrzebujesz obiektu, musisz go stworzyć wewnątrz klamerek {} każdego testu z osobna
+
+---
+
+### Test z fixture (Makro TEST_F)
+
+*Fixture* to klasa (dziedzicząca po `::testing::Test`), która przygotowuje stałe otoczenie dla grupy testów. `F` w nazwie makra oznacza właśnie Fixture
+
+- **Zastosowanie**: Gdy wiele testów korzysta z tych samych obiektów, połączeń z bazą danych lub konfiguracji. Pozwala to uniknąć powtarzania tego samego kodu (zasada DRY)
+- **Struktura**: `TEST_F(NazwaKlasyFixture, NazwaTestu) { ... }`
+
+Jak to działa:
+
+- Dla każdego testu gtest tworzy nową, świeżą instancję klasy fixture
+Uruchamia metodę SetUp() (lub konstruktor) przed testem
+- Wykonuje ciało testu
+- Uruchamia metodę TearDown() (lub destruktor) po teście
+
+**Zaleta**: Masz dostęp do pól klasy fixture (zdefiniowanych jako protected lub public) bezpośrednio w ciele testu
+
+---
 ## Slajd 4: Makra asercji
 
 | Makro                        | Opis                                       |
