@@ -88,9 +88,9 @@ Uruchamia metodę `SetUp()` (lub konstruktor) przed testem
 
 Porównanie w pigułce
 
-| Cecha      | Prosty test (TEST)       | Test z fixture (TEST_F) |
-|------------------------------|--------------------------------------------|
-| Główny cel | Szybki test bez powiązań | Współdzielenie logiki inicjalizacji |
+| Cecha            | Prosty test (`TEST`)        | Test z fixture (`TEST_F`)           |
+|------------------|-----------------------------|-------------------------------------|
+| Główny cel       | Szybki test bez powiązań    | Współdzielenie logiki inicjalizacji |
 | Przygotowanie danych | Ręcznie w każdym teście | Automatycznie w `SetUp()` lub konstruktorze |
 | Dostęp do danych | Tylko lokalne zmienne | Pola i metody klasy fixture |
 | Izolacja | Pełna | Pełna (każdy test dostaje nową instancję fixture) |
