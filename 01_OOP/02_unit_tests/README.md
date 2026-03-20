@@ -86,7 +86,7 @@ Uruchamia metodę `SetUp()` (lub konstruktor) przed testem
 
 ---
 
-Porównanie w pigułce
+### Porównanie w pigułce
 
 | Cecha            | Prosty test (`TEST`)        | Test z fixture (`TEST_F`)           |
 |------------------|-----------------------------|-------------------------------------|
