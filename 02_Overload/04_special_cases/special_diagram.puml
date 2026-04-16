@@ -1,0 +1,99 @@
+@startuml special_diagram
+
+skinparam backgroundColor #FAFAFA
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+skinparam class {
+    BackgroundColor #EEF2FF
+    BorderColor #4A5AE0
+    ArrowColor #333
+}
+skinparam note {
+    BackgroundColor #FFFDE7
+    BorderColor #FBC02D
+}
+skinparam sequence {
+    LifeLineBorderColor #4A5AE0
+    MessageAlign center
+}
+
+title Operatory szczególne – prefix vs. postfix, strumienie
+
+class Counter {
+    - val_ : int
+    --
+    + Counter(v: int = 0)
+    --
+    + operator+() : Counter <<const>>
+    + operator-() : Counter <<const>>
+    --
+    + operator++() : Counter&          <<prefix>>
+    + operator++(int) : Counter        <<postfix>>
+    + operator--() : Counter&          <<prefix>>
+    + operator--(int) : Counter        <<postfix>>
+    --
+    + value() : int <<const>>
+    --
+    + {static} <<friend>> operator<<(os, c) : ostream&
+}
+
+class Temperature {
+    - celsius_ : double
+    --
+    + Temperature(c: double)
+    + operator-() : Temperature <<const>>
+    + operator!() : bool <<const>>
+    --
+    + operator==(o: Temperature) : bool <<const>>
+    + operator!=(o: Temperature) : bool <<const>>
+    + operator< (o: Temperature) : bool <<const>>
+    + operator> (o: Temperature) : bool <<const>>
+    + operator<=(o: Temperature) : bool <<const>>
+    + operator>=(o: Temperature) : bool <<const>>
+    --
+    + {static} <<friend>> operator<<(os, t) : ostream&
+}
+
+class Point2D {
+    + x : int
+    + y : int
+    --
+    + Point2D(x=0, y=0)
+    --
+    + {static} <<friend>> operator<<(os, p) : ostream&
+    + {static} <<friend>> operator>>(is, p) : istream&
+}
+
+note top of Counter
+  Prefix: ++c
+  T& operator++()
+  → modyfikuj, zwróć *this
+
+  Postfix: c++
+  T operator++(int)
+  → zapamiętaj kopię,
+    modyfikuj, zwróć kopię
+end note
+
+note right of Temperature
+  Wzorzec DRY:
+  Implementuj == i <
+  Resztę wyraź przez:
+  a != b  ≡ !(a == b)
+  a >  b  ≡ b < a
+  a <= b  ≡ !(b < a)
+  a >= b  ≡ !(a < b)
+end note
+
+note bottom of Point2D
+  operator<< MUSI być
+  wolną funkcją:
+  ostream nie należy do nas!
+
+  Łańcuchowanie:
+  cout << p1 << p2
+  ≡ (cout << p1) << p2
+  ≡ operator<<(operator<<(cout, p1), p2)
+end note
+
+@enduml

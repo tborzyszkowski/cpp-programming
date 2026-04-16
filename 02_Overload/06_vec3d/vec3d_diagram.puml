@@ -1,0 +1,69 @@
+@startuml vec3d_diagram
+
+skinparam classAttributeIconSize 0
+skinparam backgroundColor #FAFAFA
+skinparam shadowing false
+skinparam class {
+    BackgroundColor #EEF2FF
+    BorderColor #4A5AE0
+    ArrowColor #333
+}
+skinparam note {
+    BackgroundColor #FFFDE7
+    BorderColor #FBC02D
+}
+
+title Klasa Vec3d – wektor 3D z pełnym zestawem operatorów
+
+class Vec3d {
+    - x_ : int
+    - y_ : int
+    - z_ : int
+    --
+    + Vec3d(x: int = 0, y: int = 0, z: int = 0)
+    --
+    + operator+(o: Vec3d) : Vec3d <<const>>
+    + operator-(o: Vec3d) : Vec3d <<const>>
+    + operator*(o: Vec3d) : Vec3d <<const>>     /' iloczyn wektorowy '/
+    + operator*(k: int)   : Vec3d <<const>>     /' skalowanie: v*k '/
+    --
+    + operator++() : Vec3d&                     /' prefix '/
+    + operator++(int) : Vec3d                   /' postfix '/
+    + operator--() : Vec3d&
+    + operator--(int) : Vec3d
+    --
+    + operator==(o: Vec3d) : bool <<const>>
+    + operator!=(o: Vec3d) : bool <<const>>
+    --
+    + x() : int <<const>>
+    + y() : int <<const>>
+    + z() : int <<const>>
+    --
+    + {static} <<friend>> operator<<(os: ostream&, v: Vec3d) : ostream&
+    + {static} <<friend>> operator>>(is: istream&, v: Vec3d) : istream&
+}
+
+note top of Vec3d
+  Iloczyn wektorowy (cross product):
+  v1 × v2 = (y1*z2 - z1*y2,
+             z1*x2 - x1*z2,
+             x1*y2 - y1*x2)
+end note
+
+note right of Vec3d
+  Skalowanie obustronne:
+  v * k  → metoda klasy
+  k * v  → wolna funkcja:
+  Vec3d operator*(int k, const Vec3d& v)
+            { return v * k; }
+end note
+
+note bottom of Vec3d
+  Format wyświetlania:
+  (X: 1, Y: 2, Z: 3)
+
+  Format wczytywania:
+  X: [cin]  Y: [cin]  Z: [cin]
+end note
+
+@enduml

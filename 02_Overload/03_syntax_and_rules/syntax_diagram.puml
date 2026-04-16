@@ -1,0 +1,68 @@
+@startuml syntax_diagram
+
+skinparam classAttributeIconSize 0
+skinparam backgroundColor #FAFAFA
+skinparam shadowing false
+skinparam class {
+    BackgroundColor #EEF2FF
+    BorderColor #4A5AE0
+    ArrowColor #333
+}
+skinparam note {
+    BackgroundColor #FFFDE7
+    BorderColor #FBC02D
+}
+
+title Klasa Complex – składnia przeciążania operatorów
+
+class Complex {
+    - re_ : double
+    - im_ : double
+    --
+    + Complex(re: double = 0, im: double = 0)
+    --
+    + operator+(rhs: Complex) : Complex <<const>>
+    + operator-(rhs: Complex) : Complex <<const>>
+    + operator*(rhs: Complex) : Complex <<const>>
+    + operator-() : Complex <<const>>
+    --
+    + operator+=(rhs: Complex) : Complex&
+    + operator-=(rhs: Complex) : Complex&
+    --
+    + operator==(rhs: Complex) : bool <<const>>
+    + operator!=(rhs: Complex) : bool <<const>>
+    --
+    + re() : double <<const>>
+    + im() : double <<const>>
+    + abs() : double <<const>>
+    --
+    + {static} <<friend>> operator<<(os: ostream&, c: Complex) : ostream&
+    + {static} <<friend>> operator>>(is: istream&, c: Complex) : istream&
+}
+
+note top of Complex
+  <b>Metoda klasy:</b>
+  Complex operator+(const Complex& rhs) const
+  ↑ lewy operand = *this
+
+  <b>Wolna funkcja (friend):</b>
+  operator<<(ostream& os, const Complex& c)
+  ↑ lewy operand = strumień — NIE może być metodą klasy
+end note
+
+note right of Complex
+  <b>Typy zwracane:</b>
+  + − * /  → T (nowy obiekt)
+  += −=    → T& (referencja do *this)
+  == != <  → bool
+  << >>    → ostream& / istream&
+end note
+
+note bottom of Complex
+  <b>Wzorzec implementacji:</b>
+  operator+(lhs, rhs)
+    → { Complex tmp = lhs; tmp += rhs; return tmp; }
+  Brak duplikacji logiki!
+end note
+
+@enduml

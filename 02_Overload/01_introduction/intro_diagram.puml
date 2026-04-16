@@ -1,0 +1,45 @@
+@startuml intro_diagram
+
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontName "DejaVu Sans"
+skinparam shadowing false
+
+skinparam rectangle {
+    BackgroundColor #EEF2FF
+    BorderColor #4A5AE0
+    FontSize 13
+}
+skinparam note {
+    BackgroundColor #FFFDE7
+    BorderColor #FBC02D
+}
+
+title Przeciążanie operatorów – jak kompilator wyszukuje operator
+
+rectangle "Wyrażenie\n**a OP b**" as expr #D1FAE5
+
+rectangle "Metoda klasy A?\n**a.operatorOP(b)**" as method #DBEAFE
+rectangle "Wolna funkcja?\n**operatorOP(a, b)**" as free #DBEAFE
+rectangle "**Błąd kompilacji**\nno match for 'operatorOP'" as err #FEE2E2
+rectangle "**Wywołanie funkcji**" as call #D1FAE5
+
+expr -down-> method : szukaj w klasie A
+method -right-> call : znaleziono ✓
+method -down-> free  : nie znaleziono
+free  -right-> call  : znaleziono ✓
+free  -down-> err    : nie znaleziono ✗
+
+note right of expr
+  //Priorytety operatorów//
+  //i liczba argumentów//
+  //NIE zmieniają się!//
+end note
+
+note bottom of call
+  Obie formy są równoważne:
+  **a + b**
+  ≡ a.operator+(b)
+  ≡ operator+(a, b)
+end note
+
+@enduml

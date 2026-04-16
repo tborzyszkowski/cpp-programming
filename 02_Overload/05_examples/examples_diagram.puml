@@ -1,0 +1,73 @@
+@startuml examples_diagram
+
+skinparam classAttributeIconSize 0
+skinparam backgroundColor #FAFAFA
+skinparam shadowing false
+skinparam class {
+    BackgroundColor #EEF2FF
+    BorderColor #4A5AE0
+    ArrowColor #333
+}
+skinparam note {
+    BackgroundColor #FFFDE7
+    BorderColor #FBC02D
+}
+
+title Klasa Fraction – pełny zestaw przeciążonych operatorów
+
+class Fraction {
+    - num_ : int
+    - den_ : int
+    --
+    + Fraction(num: int = 0, den: int = 1)
+    --
+    + operator+(o: Fraction) : Fraction <<const>>
+    + operator-(o: Fraction) : Fraction <<const>>
+    + operator*(o: Fraction) : Fraction <<const>>
+    + operator/(o: Fraction) : Fraction <<const>>
+    + operator-() : Fraction <<const>>
+    + operator+() : Fraction <<const>>
+    --
+    + operator+=(o: Fraction) : Fraction&
+    + operator-=(o: Fraction) : Fraction&
+    + operator*=(o: Fraction) : Fraction&
+    + operator/=(o: Fraction) : Fraction&
+    --
+    + operator==(o: Fraction) : bool <<const>>
+    + operator!=(o: Fraction) : bool <<const>>
+    + operator<  (o: Fraction) : bool <<const>>
+    + operator>  (o: Fraction) : bool <<const>>
+    + operator<= (o: Fraction) : bool <<const>>
+    + operator>= (o: Fraction) : bool <<const>>
+    --
+    + numerator() : int <<const>>
+    + denominator() : int <<const>>
+    + toDouble() : double <<const>>
+    --
+    + {static} <<friend>> operator<<(os: ostream&, f: Fraction) : ostream&
+    + {static} <<friend>> operator>>(is: istream&, f: Fraction) : istream&
+    --
+    - normalize() : void
+}
+
+note top of Fraction
+  Niezmiennik klasy:
+  • den_ > 0  (znak w liczniku)
+  • gcd(|num_|, den_) == 1  (postać nieskracalna)
+  Normalizacja wywoływana zawsze w konstruktorze.
+end note
+
+note right of Fraction
+  Wzorzec DRY:
+  operator+ deleguje do operator+=
+  operator!= deleguje do operator==
+  operator>  deleguje do operator<
+end note
+
+note bottom of Fraction
+  Wzory matematyczne:
+  p1/q1 + p2/q2 = (p1*q2 + p2*q1) / (q1*q2)
+  p1/q1 < p2/q2  ↔  p1*q2 < p2*q1
+end note
+
+@enduml

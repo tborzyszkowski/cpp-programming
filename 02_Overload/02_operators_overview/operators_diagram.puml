@@ -1,0 +1,56 @@
+@startuml operators_diagram
+
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontName "DejaVu Sans"
+skinparam shadowing false
+
+title Mapa operatorów w C++ – które przeciążamy?
+
+<style>
+mindmapDiagram {
+  node {
+    BackgroundColor #EEF2FF
+    BorderColor #4A5AE0
+  }
+  :depth(1) {
+    BackgroundColor #DBEAFE
+  }
+  :depth(2) {
+    BackgroundColor #F0FDF4
+  }
+}
+</style>
+
+@startmindmap
+* Operatory C++
+
+** <color:#16a34a>Można przeciążyć
+*** <color:#166534>Arytmetyczne\n+ − * / %
+*** <color:#166534>Przypisanie\n= += −= *= /= %=\n&= |= ^= <<= >>=
+*** <color:#166534>Jednoargumentowe\n+x −x !x ~x\n*x &x
+*** <color:#166534>Inkrementacja\n++ (prefix / postfix)\n−− (prefix / postfix)
+*** <color:#166534>Porównania\n== != < > <= >=\n<=> (C++20)
+*** <color:#166534>Logiczne\n&& || !\n⚠ ostrożnie: short-circuit zanika
+*** <color:#166534>Bitowe\n& | ^ ~ << >>
+*** <color:#166534>Dostęp\n[] () → →*
+*** <color:#166534>Alokacja\nnew new[] delete delete[]
+*** <color:#166534>Strumienie\n<< >>
+*** <color:#166534>Konwersja\noperator T()
+
+** <color:#dc2626>NIE można przeciążyć
+*** <color:#991b1b>:: — rozwiązanie zakresu
+*** <color:#991b1b>. — dostęp do składowej
+*** <color:#991b1b>.* — wskaźnik na składową
+*** <color:#991b1b>sizeof — rozmiar
+*** <color:#991b1b>typeid — informacja o typie
+*** <color:#991b1b>?: — trójargumentowy
+
+** <color:#d97706>Tylko jako metoda klasy
+*** <color:#92400e>= — przypisanie
+*** <color:#92400e>[] — indeksowanie
+*** <color:#92400e>() — wywołanie
+*** <color:#92400e>-> — strzałka
+*** <color:#92400e>operator T() — konwersja
+@endmindmap
+
+@enduml
