@@ -192,10 +192,18 @@ Get-ChildItem -Recurse -Filter "*.puml" | ForEach-Object {
 
 ---
 
-## Literatura i linki
+## Literatura
+
+1. B. Stroustrup, *The C++ Programming Language*, 4th ed., Addison-Wesley, 2013 – rozdz. 16–17 (klasy, konstruktory, kopiowanie).
+2. S. Meyers, *Effective C++*, 3rd ed., Addison-Wesley, 2005 – pozycje 5–12 (zarządzanie zasobami, kopiowanie).
+3. S. Meyers, *Effective Modern C++*, O'Reilly, 2014 – pozycje 17, 23, 29 (move semantics, smart pointery).
+4. N. Josuttis, *The C++ Standard Library*, 2nd ed., Addison-Wesley, 2012 – rozdz. 2 (wprowadzenie do typów i obiektów).
+5. ISO/IEC 14882:2020 (C++20) – §11 „Classes", §15 „Special member functions".
+
+## Linki
 
 - [cppreference.com](https://en.cppreference.com) – pełna dokumentacja C++
-- [C++ Core Guidelines](https://isocpp.github.io/CppCoreGuidelines/) – dobre praktyki
+- [C++ Core Guidelines](https://isocpp.github.io/CppCoreGuidelines/) – dobre praktyki (C.ctor, C.copy, R.smart)
 - [Google Test](https://github.com/google/googletest) – framework testów jednostkowych
 - [PlantUML](https://plantuml.com) – generowanie diagramów UML
 - [CMake FetchContent](https://cmake.org/cmake/help/latest/module/FetchContent.html) – pobieranie zależności

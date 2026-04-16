@@ -25,3 +25,4 @@ Materiały dydaktyczne do zajęć z programowania w C++.
 | Moduł | Temat |
 |-------|-------|
 | [01_OOP](01_OOP/README.md) | Programowanie obiektowe w C++ |
+| [02_Overload](02_Overload/README.md) | Przeciążanie operatorów w C++ |

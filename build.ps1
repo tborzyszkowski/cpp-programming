@@ -107,7 +107,13 @@ function Invoke-Programs {
         @{ Dir = "01_OOP\06_const\src";         Name = "const_demo";    Files = "main.cpp" },
         @{ Dir = "01_OOP\07_static_members\src";Name = "static_members";Files = "main.cpp" },
         @{ Dir = "01_OOP\08_friend\src";        Name = "friend_demo";   Files = "main.cpp" },
-        @{ Dir = "01_OOP\09_stack_heap\src";    Name = "stack_heap";    Files = "main.cpp" }
+        @{ Dir = "01_OOP\09_stack_heap\src";    Name = "stack_heap";    Files = "main.cpp" },
+        @{ Dir = "02_Overload\01_introduction\src";       Name = "overload_intro";     Files = "main.cpp" },
+        @{ Dir = "02_Overload\02_operators_overview\src";  Name = "overload_overview";  Files = "main.cpp" },
+        @{ Dir = "02_Overload\03_syntax_and_rules\src";    Name = "overload_syntax";    Files = "main.cpp" },
+        @{ Dir = "02_Overload\04_special_cases\src";       Name = "overload_special";   Files = "main.cpp" },
+        @{ Dir = "02_Overload\05_examples\src";            Name = "overload_fraction";  Files = "main.cpp" },
+        @{ Dir = "02_Overload\06_vec3d\src";               Name = "overload_vec3d";     Files = "main.cpp" }
     )
 
     $gpp = Get-Command "g++" -ErrorAction SilentlyContinue
