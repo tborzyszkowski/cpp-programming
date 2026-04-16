@@ -172,6 +172,67 @@ struct Matrix2x2 {
 
 ---
 
+## Slajd 9: Operatory obowiązkowo-metodowe – `[]`, `()`, konwersja
+
+Te operatory **muszą** być metodami klasy (standard języka to wymusza):
+
+### `operator[]` – indeksowanie
+
+```cpp
+class IntArray {
+    int* data_;
+    int  size_;
+public:
+    IntArray(int size) : size_(size), data_(new int[size]{}) {}
+    ~IntArray() { delete[] data_; }
+
+    // Wersja do zapisu i odczytu
+    int& operator[](int idx) { return data_[idx]; }
+    // Wersja tylko do odczytu (na const obiekcie)
+    const int& operator[](int idx) const { return data_[idx]; }
+};
+
+IntArray arr(5);
+arr[2] = 42;              // operator[] zwraca referencję → można przypisać
+std::cout << arr[2];      // 42
+```
+
+### `operator()` – funktor (obiekt wywoływalny)
+
+```cpp
+struct Multiplier {
+    double factor;
+    double operator()(double x) const { return x * factor; }
+};
+
+Multiplier twice{2.0};
+std::cout << twice(3.14);   // 6.28 — obiekt wywołany jak funkcja
+// Przydatne w STL: std::transform(v.begin(), v.end(), v.begin(), twice);
+```
+
+### `operator T()` – konwersja typu
+
+```cpp
+class Celsius {
+    double val_;
+public:
+    explicit Celsius(double v) : val_(v) {}
+    // Konwersja Celsius → double
+    explicit operator double() const { return val_; }
+    // Konwersja Celsius → bool (czy niezerowa)
+    explicit operator bool() const { return val_ != 0.0; }
+};
+
+Celsius t(36.6);
+double d = static_cast<double>(t);   // 36.6 — explicit wymusza static_cast
+if (t) { /* ... */ }                 // operator bool() — w if() działa nawet explicit
+```
+
+> **Meyers (Effective C++, poz. 27):** Używaj `explicit` w konwersjach – zapobiega zaskakującym
+> konwersjom niejawnym.
+
+---
+
 ## Podsumowanie
 
 | Pytanie | Odpowiedź |

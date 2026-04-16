@@ -113,7 +113,10 @@ function Invoke-Programs {
         @{ Dir = "02_Overload\03_syntax_and_rules\src";    Name = "overload_syntax";    Files = "main.cpp" },
         @{ Dir = "02_Overload\04_special_cases\src";       Name = "overload_special";   Files = "main.cpp" },
         @{ Dir = "02_Overload\05_examples\src";            Name = "overload_fraction";  Files = "main.cpp" },
-        @{ Dir = "02_Overload\06_vec3d\src";               Name = "overload_vec3d";     Files = "main.cpp" }
+        @{ Dir = "02_Overload\06_vec3d\src";               Name = "overload_vec3d";     Files = "main.cpp" },
+        @{ Dir = "02_Overload\exercises\solutions\ex1_matrix\";       Name = "ex1_matrix";       Files = "main.cpp" },
+        @{ Dir = "02_Overload\exercises\solutions\ex2_statistics\";    Name = "ex2_statistics";   Files = "main.cpp" },
+        @{ Dir = "02_Overload\exercises\solutions\ex3_temperature\";   Name = "ex3_temperature";  Files = "main.cpp" }
     )
 
     $gpp = Get-Command "g++" -ErrorAction SilentlyContinue

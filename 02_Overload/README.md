@@ -10,6 +10,7 @@
 | [04 – Przypadki szczególne](04_special_cases/README.md) | Jednoargumentowe, ++/--, porównania, I/O | [`src/main.cpp`](04_special_cases/src/main.cpp) |
 | [05 – Przykłady](05_examples/README.md) | Klasa `Fraction` – pełny zestaw operatorów | [`src/Fraction.h`](05_examples/src/Fraction.h) |
 | [06 – Vec3d](06_vec3d/README.md) | Większy przykład: wektor 3D | [`src/Vec3d.h`](06_vec3d/src/Vec3d.h) |
+| [Zadania](exercises/README.md) | 3 zadania z rozwiązaniami | [`solutions/`](exercises/solutions/) |
 
 ---
 
