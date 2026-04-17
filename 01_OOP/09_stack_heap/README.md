@@ -284,6 +284,155 @@ Kolejność wyboru: `unique_ptr` → `shared_ptr` → `weak_ptr` (jako uzupełni
 
 ---
 
+## Slajd 7b: `weak_ptr` – szczegółowa analiza i implementacja
+
+### Czym jest `weak_ptr`?
+
+`weak_ptr` to **obserwator** – wskazuje na obiekt zarządzany przez `shared_ptr`, ale:
+- **nie zwiększa** licznika silnych referencji (`use_count`)
+- **nie przedłuża** życia obiektu
+- **nie gwarantuje**, że obiekt nadal istnieje – przed użyciem należy to sprawdzić
+
+### Model pamięci – blok kontrolny
+
+Każdy `shared_ptr` utrzymuje wspólny **blok kontrolny** w stercie:
+
+```
+  shared_ptr sp1 ──┐
+                   ├──► [ blok kontrolny          ] ──► [ obiekt Point3D ]
+  shared_ptr sp2 ──┘     strong_count = 2                na stercie
+                         weak_count   = 1
+             ▲
+  weak_ptr wp ─────────────────────────────────────────────────────────┘
+  (tylko weak_count++, obiekt dostępny przez lock())
+```
+
+Obiekt jest niszczony gdy `strong_count == 0`.  
+Blok kontrolny jest niszczony gdy zarówno `strong_count == 0` **i** `weak_count == 0`.
+
+---
+
+### Przykład implementacji – cache obiektów
+
+Klasyczne, praktyczne użycie `weak_ptr`: **cache**, który nie zatrzymuje obiektów przy życiu. Gdy żaden inny kod nie trzyma `shared_ptr`, obiekt jest zwalniany, a cache automatycznie to wykrywa.
+
+```cpp
+#include <memory>
+#include <map>
+#include <string>
+#include <iostream>
+
+class Texture {
+    std::string name_;
+public:
+    explicit Texture(const std::string& name) : name_(name) {
+        std::cout << "[Texture] Ładowanie: " << name_ << "\n";
+    }
+    ~Texture() {
+        std::cout << "[Texture] Zwalnianie: " << name_ << "\n";
+    }
+    const std::string& name() const { return name_; }
+};
+
+class TextureCache {
+    // weak_ptr – cache NIE jest właścicielem tekstur
+    std::map<std::string, std::weak_ptr<Texture>> cache_;
+public:
+    std::shared_ptr<Texture> get(const std::string& name) {
+        auto it = cache_.find(name);
+        if (it != cache_.end()) {
+            // Próba zablokowania – obiekt może już nie istnieć
+            if (auto sp = it->second.lock()) {
+                std::cout << "[Cache] Trafienie: " << name << "\n";
+                return sp;   // obiekt nadal żyje → zwróć istniejący
+            }
+            // Obiekt zniszczony – wpis nieaktualny, usuń go
+            cache_.erase(it);
+        }
+        // Brak w cache lub wygasły – utwórz nowy
+        std::cout << "[Cache] Chybienie: " << name << "\n";
+        auto sp = std::make_shared<Texture>(name);
+        cache_[name] = sp;   // zapisz jako weak_ptr
+        return sp;
+    }
+
+    void printStatus() const {
+        std::cout << "[Cache] Stan (" << cache_.size() << " wpisów):\n";
+        for (const auto& [name, wp] : cache_) {
+            std::cout << "  " << name
+                      << (wp.expired() ? " [wygasły]" : " [żywy]")
+                      << "\n";
+        }
+    }
+};
+
+int main() {
+    TextureCache cache;
+
+    // --- Blok 1: pobierz dwie tekstury ---
+    {
+        auto t1 = cache.get("brick.png");    // Chybienie → ładowanie
+        auto t2 = cache.get("brick.png");    // Trafienie  → ten sam obiekt
+        auto t3 = cache.get("wood.png");     // Chybienie → ładowanie
+
+        std::cout << "use_count brick: " << t1.use_count() << "\n"; // 3 (t1,t2,cache nie liczy!)
+        cache.printStatus();                  // brick [żywy], wood [żywy]
+    }
+    // t1, t2, t3 wychodzą ze scope → strong_count = 0 → destruktory wywołane!
+
+    std::cout << "--- po wyjściu z bloku ---\n";
+    cache.printStatus();                      // brick [wygasły], wood [wygasły]
+
+    // --- Blok 2: ponowne pobranie ---
+    {
+        auto t4 = cache.get("brick.png");    // Chybienie (wpis wygasły) → nowe ładowanie
+        cache.printStatus();                  // brick [żywy]
+    }
+
+    return 0;
+}
+```
+
+**Wyjście programu:**
+```
+[Cache] Chybienie: brick.png
+[Texture] Ładowanie: brick.png
+[Cache] Trafienie: brick.png
+[Cache] Chybienie: wood.png
+[Texture] Ładowanie: wood.png
+use_count brick: 3
+[Cache] Stan (2 wpisów):
+  brick.png [żywy]
+  wood.png  [żywy]
+[Texture] Zwalnianie: brick.png
+[Texture] Zwalnianie: wood.png
+--- po wyjściu z bloku ---
+[Cache] Stan (2 wpisów):
+  brick.png [wygasły]
+  wood.png  [wygasły]
+[Cache] Chybienie: brick.png
+[Texture] Ładowanie: brick.png
+[Cache] Stan (2 wpisów):
+  brick.png [żywy]
+  wood.png  [wygasły]
+[Texture] Zwalnianie: brick.png
+```
+
+> Zauważ: cache nie zatrzymuje tekstur przy życiu. Gdy żaden kod zewnętrzny nie trzyma `shared_ptr`, tekstura jest zwalniana, a `weak_ptr` automatycznie to rejestruje (`expired() == true`).
+
+---
+
+### Metody `weak_ptr`
+
+| Metoda          | Opis                                                             |
+|-----------------|------------------------------------------------------------------|
+| `lock()`        | Zwraca `shared_ptr`; `nullptr` gdy obiekt już zniszczony        |
+| `expired()`     | `true` gdy `strong_count == 0` (obiekt zniszczony)              |
+| `use_count()`   | Liczba silnych referencji (dla diagnostyki)                     |
+| `reset()`       | Odłącza `weak_ptr` od obserwowanego obiektu                     |
+
+---
+
 ## Slajd 8: Porównanie – stos vs. sterta
 
 | Cecha               | Stos                        | Sterta                        |
@@ -303,18 +452,48 @@ Kolejność wyboru: `unique_ptr` → `shared_ptr` → `weak_ptr` (jako uzupełni
 ![Diagram](memory_diagram.png)
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│                      PAMIĘĆ PROCESU                          │
-├──────────────────┬───────────────────┬────────────────────── │
-│     STOS         │     STERTA        │  SEGMENT STATYCZNY    │
-│  (automatyczny)  │  (ręczny)         │  (zmienne statyczne)  │
-│                  │                   │                        │
-│ Point3D p1       │ Point3D* hp1 ──►  │ BankAccount::nextId_  │
-│ Point3D p2       │ Point3D[3]   ──►  │ BankAccount::rate_    │
-│ int x            │                   │                        │
-│ [destruktory     │ [delete!          │                        │
-│  auto przy LIFO] │  obowiązkowe]     │                        │
-└──────────────────┴───────────────────┴────────────────────── ┘
+ Przestrzeń adresowa procesu
+ ┌──────────────────────────────────────────────────────────────────────┐
+ │  SEGMENT KODU (.text)                                                │
+ │  skompilowane instrukcje programu (tylko do odczytu)                 │
+ ├──────────────────────────────────────────────────────────────────────┤
+ │  SEGMENT STATYCZNY (.data / .bss)                                    │
+ │  zmienne globalne i statyczne – żyją przez cały czas programu        │
+ │                                                                      │
+ │   BankAccount::nextId_        = 1000                                 │
+ │   BankAccount::interestRate_  = 0.05                                 │
+ │   BankAccount::totalAccounts_ = 3                                    │
+ ├──────────────────────────────────────────────────────────────────────┤
+ │  STERTA (heap)                                          ▲  rośnie    │
+ │  dynamiczna alokacja: new / delete                      │  w górę    │
+ │                                                                      │
+ │   ┌──────────────────┐   ┌──────────────────┐                       │
+ │   │  Point3D         │   │  int[5]          │                       │
+ │   │  (new Point3D)   │   │  (new int[5])    │                       │
+ │   │  x=1, y=2, z=3   │   │  {0,2,4,6,8}    │                       │
+ │   └──────────────────┘   └──────────────────┘                       │
+ │        ▲                        ▲                                    │
+ │        │                        │                                    │
+ │      hp ──────────────     arr ─────────────  (wskaźniki na stosie) │
+ │                                                                      │
+ │   [brak delete → wyciek pamięci!]                                    │
+ ├──────────────────────────────────────────────────────────────────────┤
+ │  STOS (stack)                                           │  rośnie    │
+ │  zmienne lokalne i parametry funkcji                    ▼  w dół    │
+ │                                                                      │
+ │   ┌── main() ───────────────────────────────────────────┐           │
+ │   │  Point3D p1 = {x=1.0, y=2.0, z=3.0}               │           │
+ │   │  int x = 42                                         │           │
+ │   │  Point3D* hp → (sterta)                             │           │
+ │   │  int*     arr → (sterta)                            │           │
+ │   │  ┌── f() ──────────────────────────────────────┐   │           │
+ │   │  │  Point3D p2 = {x=4.0, y=5.0, z=6.0}       │   │           │
+ │   │  │  double d = 3.14                            │   │           │
+ │   │  │  ← ~Point3D p2 przy wyjściu z f() (LIFO)   │   │           │
+ │   │  └─────────────────────────────────────────────┘   │           │
+ │   │  ← ~Point3D p1, ~int x przy wyjściu z main()       │           │
+ │   └─────────────────────────────────────────────────────┘           │
+ └──────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
