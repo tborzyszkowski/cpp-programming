@@ -6,14 +6,25 @@ Każdy obiekt klasy ma **własną kopię** pól niestatycznych.
 Pole **statyczne** jest **jedną kopią wspólną** dla wszystkich obiektów.
 
 ```
-Pola niestatyczne (per-object):          Pole statyczne (shared):
-┌─────────────┐                         ┌─────────────────────────────┐
-│ alice       │ owner_="Alice"           │ BankAccount::interestRate_  │
-│             │ balance_=1060            │ = 0.03 (wspólna dla → → →) │
-│ bob         │ owner_="Bob"             └─────────────────────────────┘
-│             │ balance_=515                    ↑         ↑        ↑
-│ charlie     │ owner_="Charlie"             alice      bob    charlie
-└─────────────┘ balance_=0
+Pola niestatyczne (per-object):             Pole statyczne (shared):
+
+┌─────────────────────┐                    ┌──────────────────────────────┐
+│ alice               │ ─────────────────► │ BankAccount::interestRate_   │
+│  owner_  = "Alice"  │                    │   = 0.03                     │
+│  balance_= 1060.00  │ ─────────────────► │  (jedna wspólna kopia        │
+└─────────────────────┘                    │   dla wszystkich obiektów)   │
+                                           │                              │
+┌─────────────────────┐                    │                              │
+│ bob                 │ ─────────────────► │                              │
+│  owner_  = "Bob"    │                    └──────────────────────────────┘
+│  balance_=  515.00  │
+└─────────────────────┘
+
+┌─────────────────────┐
+│ charlie             │
+│  owner_  = "Charlie"│
+│  balance_=    0.00  │
+└─────────────────────┘
 ```
 
 ---
