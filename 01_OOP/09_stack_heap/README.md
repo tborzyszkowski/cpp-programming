@@ -136,26 +136,151 @@ public:
 
 ## Slajd 7: Smart Pointers (C++11) – RAII gotowe rozwiązania
 
-```cpp
-// unique_ptr – jeden właściciel, automatyczne delete
-{
-    auto p = std::make_unique<Point3D>(20, 5.0, 6.0, 7.0);
-    std::cout << p->toString() << "\n";
-}   // ← delete automatycznie!
+Smart pointer to obiekt-opakowanie na surowy wskaźnik. Dzięki RAII wywołuje `delete` automatycznie w swoim destruktorze – nawet gdy funkcja zakończy się wyjątkiem.
 
-// shared_ptr – współdzielona własność
-auto sp1 = std::make_shared<Point3D>(21, 8.0, 9.0, 10.0);
-auto sp2 = sp1;   // refcount = 2
-// delete gdy ostatni shared_ptr wyjdzie ze scope
+---
+
+### `unique_ptr` – wyłączna własność
+
+Jeden `unique_ptr` = jeden właściciel zasobu. Nie można go kopiować – tylko **przenosić** (`std::move`).  
+To domyślny wybór: zerowy narzut pamięciowy i wydajnościowy względem gołego wskaźnika.
+
+```cpp
+#include <memory>
+
+// Tworzenie – zawsze przez make_unique (nigdy new bezpośrednio)
+auto p = std::make_unique<Point3D>(20, 5.0, 6.0, 7.0);
+
+std::cout << p->toString() << "\n";   // operator-> jak na surowym wskaźniku
+std::cout << (*p).toString() << "\n"; // lub operator*
+
+// Transfer własności – po move p jest pusty (nullptr)
+auto p2 = std::move(p);
+// p  → nullptr (nie wolno używać!)
+// p2 → ma obiekt
+
+// auto p3 = p2;   // ❌ BŁĄD KOMPILACJI – kopiowanie zabronione
+
+}   // ← destruktor p2: delete automatycznie, nawet przy wyjątku
 ```
 
-| Smart pointer  | Własność         | Kiedy używać                        |
-|----------------|------------------|--------------------------------------|
-| `unique_ptr`   | wyłączna         | domyślnie – jeden właściciel        |
-| `shared_ptr`   | współdzielona    | wiele właścicieli                   |
-| `weak_ptr`     | brak (obserwator)| unikanie cykli w shared_ptr         |
+**Kiedy używać:** wszędzie tam, gdzie jeden właściciel jest wystarczający – czyli w ~90% przypadków.
 
-**Zasada:** Preferuj smart pointery nad gołymi `new`/`delete`!
+---
+
+### `shared_ptr` – współdzielona własność
+
+Wiele `shared_ptr` może wskazywać na ten sam obiekt. Wewnętrznie prowadzony jest **licznik referencji** (*reference count*). Obiekt jest niszczony gdy licznik spadnie do zera.
+
+```cpp
+auto sp1 = std::make_shared<Point3D>(21, 8.0, 9.0, 10.0);
+// refcount = 1
+
+{
+    auto sp2 = sp1;          // kopiowanie → refcount = 2
+    auto sp3 = sp1;          // kopiowanie → refcount = 3
+    std::cout << sp1.use_count() << "\n";   // 3
+}   // sp2, sp3 wypadają ze scope → refcount = 1
+
+// sp1 nadal żyje
+// refcount = 0 gdy sp1 wypadnie ze scope → delete
+```
+
+**Koszt:** `shared_ptr` przechowuje dodatkowy blok kontrolny (*control block*) z licznikiem – zajmuje więcej pamięci niż `unique_ptr` i operacje na liczniku są atomowe (thread-safe, ale wolniejsze).
+
+**Kiedy używać:** gdy zasób musi być współdzielony przez wielu właścicieli (np. węzły grafu, cache, zdarzenia).
+
+---
+
+### `weak_ptr` – obserwator bez własności
+
+`weak_ptr` wskazuje na obiekt zarządzany przez `shared_ptr`, ale **nie zwiększa licznika referencji**. Nie przedłuża życia obiektu.
+
+Główne zastosowanie: **przerwanie cykli referencji**, które uniemożliwiłyby zwolnienie pamięci.
+
+#### Problem cyklu – bez `weak_ptr`
+
+```cpp
+struct Node {
+    std::shared_ptr<Node> next;   // silna referencja
+    ~Node() { std::cout << "~Node\n"; }
+};
+
+auto a = std::make_shared<Node>();  // refcount(a) = 1
+auto b = std::make_shared<Node>();  // refcount(b) = 1
+
+a->next = b;   // refcount(b) = 2
+b->next = a;   // refcount(a) = 2
+
+// Koniec scope: a i b wychodzą → refcount spada do 1 (nie do 0!)
+// Destruktory nigdy nie są wywoływane → WYCIEK PAMIĘCI!
+```
+
+```
+a ──(shared)──► Node_A
+                  │
+               (shared)
+                  ▼
+               Node_B ──(shared)──► a   ← cykl!
+```
+
+#### Rozwiązanie – `weak_ptr`
+
+```cpp
+struct Node {
+    std::weak_ptr<Node> next;     // słaba referencja – nie zwiększa licznika
+    ~Node() { std::cout << "~Node\n"; }
+};
+
+auto a = std::make_shared<Node>();  // refcount(a) = 1
+auto b = std::make_shared<Node>();  // refcount(b) = 1
+
+a->next = b;   // refcount(b) nadal = 1  (weak nie liczy!)
+b->next = a;   // refcount(a) nadal = 1
+
+// Koniec scope: a → refcount = 0 → delete Node_A
+//               b → refcount = 0 → delete Node_B
+// Destruktory wywołane poprawnie!
+```
+
+#### Bezpieczne użycie `weak_ptr` – `lock()`
+
+Przed dostępem do obiektu przez `weak_ptr` należy sprawdzić, czy obiekt jeszcze istnieje.  
+Metoda `lock()` zwraca `shared_ptr` – jeśli obiekt już został zniszczony, zwraca `nullptr`.
+
+```cpp
+std::weak_ptr<Point3D> wp;
+
+{
+    auto sp = std::make_shared<Point3D>(1, 1.0, 2.0, 3.0);
+    wp = sp;                        // wp obserwuje, nie jest właścicielem
+
+    if (auto locked = wp.lock()) {  // lock() → shared_ptr lub nullptr
+        std::cout << locked->toString() << "\n";   // ✅ obiekt żyje
+    }
+}   // sp wychodzi ze scope → obiekt zniszczony
+
+if (auto locked = wp.lock()) {
+    // ten blok się nie wykona
+} else {
+    std::cout << "Obiekt już nie istnieje\n";   // ✅
+}
+
+// wp.expired() → true gdy refcount == 0
+```
+
+---
+
+### Porównanie smart pointerów
+
+| Smart pointer  | Własność         | Licznik ref | Kopiowanie | Kiedy używać                             |
+|----------------|------------------|:-----------:|:----------:|------------------------------------------|
+| `unique_ptr`   | wyłączna         | brak        | ❌ (tylko move) | domyślnie – jeden właściciel         |
+| `shared_ptr`   | współdzielona    | tak         | ✅          | wiele właścicieli                        |
+| `weak_ptr`     | brak (obserwator)| nie liczy   | ✅          | obserwacja bez własności, łamanie cykli  |
+
+**Zasada:** Preferuj smart pointery nad gołymi `new`/`delete`!  
+Kolejność wyboru: `unique_ptr` → `shared_ptr` → `weak_ptr` (jako uzupełnienie `shared_ptr`).
 
 ---
 
