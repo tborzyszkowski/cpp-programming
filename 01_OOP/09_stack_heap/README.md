@@ -452,49 +452,48 @@ use_count brick: 3
 ![Diagram](memory_diagram.png)
 
 ```
- Przestrzeń adresowa procesu
- ┌──────────────────────────────────────────────────────────────────────┐
- │  SEGMENT KODU (.text)                                                │
- │  Skompilowane instrukcje programu – tylko do odczytu                 │
- ├──────────────────────────────────────────────────────────────────────┤
- │  SEGMENT STATYCZNY (.data / .bss)                                    │
- │  Zmienne globalne i pola static – żyją przez cały czas programu      │
- │                                                                      │
- │    BankAccount::nextId_        = 1000                                │
- │    BankAccount::interestRate_  = 0.05                                │
- │    BankAccount::totalAccounts_ = 3                                   │
- ├──────────────────────────────────────────────────────────────────────┤
- │  STERTA (heap)                                          ▲  rośnie   │
- │  Dynamiczna alokacja: new / delete                      │  w górę   │
- │                                                                      │
- │    ┌─────────────────────────┐    ┌─────────────────────────┐       │
- │    │  Point3D                │    │  int[5]                 │       │
- │    │  x=1.0, y=2.0, z=3.0   │    │  { 0, 2, 4, 6, 8 }     │       │
- │    │  ← wskazywany przez hp  │    │  ← wskazywany przez arr │       │
- │    └─────────────────────────┘    └─────────────────────────┘       │
- │    Brak delete → wyciek!   Tablice: delete[], nie delete             │
- ├──────────────────────────────────────────────────────────────────────┤
- │  STOS (stack)                                           │  rośnie   │
- │  Zmienne lokalne i ramki funkcji                        ▼  w dół   │
- │                                                                      │
- │  ╔════════════════════════════════════════════════════════════╗      │
- │  ║  ramka: main()                                             ║      │
- │  ╠════════════════════════════════════════════════════════════╣      │
- │  ║  Point3D  p1  = { x=1.0, y=2.0, z=3.0 }   ← na stosie   ║      │
- │  ║  int      x   = 42                                        ║      │
- │  ║  Point3D* hp  ──────────────────────────────► (sterta)   ║      │
- │  ║  int*     arr ──────────────────────────────► (sterta)   ║      │
- │  ║                                                           ║      │
- │  ║  ╔═══════════════════════════════════════════════════╗   ║      │
- │  ║  ║  ramka: f()                                       ║   ║      │
- │  ║  ╠═══════════════════════════════════════════════════╣   ║      │
- │  ║  ║  Point3D  p2 = { x=4.0, y=5.0, z=6.0 }          ║   ║      │
- │  ║  ║  double   d  = 3.14                               ║   ║      │
- │  ║  ║  ← ~p2 automatycznie przy return (LIFO)           ║   ║      │
- │  ║  ╚═══════════════════════════════════════════════════╝   ║      │
- │  ║  ← ~p1 automatycznie przy return z main() (LIFO)         ║      │
- │  ╚════════════════════════════════════════════════════════════╝      │
- └──────────────────────────────────────────────────────────────────────┘
+Przestrzeń adresowa procesu
+╔══════════════════════════════════════════════════════════════════╗
+║  SEGMENT KODU  (.text)                                           ║
+║  Skompilowane instrukcje programu – tylko do odczytu             ║
+╠══════════════════════════════════════════════════════════════════╣
+║  SEGMENT STATYCZNY  (.data / .bss)                               ║
+║  Zmienne globalne i pola static – żyją przez cały czas programu  ║
+║                                                                  ║
+║    BankAccount::nextId_        = 1000                            ║
+║    BankAccount::interestRate_  = 0.05                            ║
+║    BankAccount::totalAccounts_ = 3                               ║
+╠══════════════════════════════════════════════════════════════════╣
+║  STERTA  (heap)                               ▲  rośnie          ║
+║  Dynamiczna alokacja: new / delete            │  w górę          ║
+║                                                                  ║
+║  ┌────────────────────────────┐  ┌────────────────────────────┐ ║
+║  │  Point3D                   │  │  int[5]                    │ ║
+║  │  { x=1.0, y=2.0, z=3.0 }  │  │  { 0, 2, 4, 6, 8 }        │ ║
+║  │  ↑ wskazuje: hp            │  │  ↑ wskazuje: arr           │ ║
+║  └────────────────────────────┘  └────────────────────────────┘ ║
+║  brak delete → wyciek!           tablice: delete[], nie delete   ║
+╠══════════════════════════════════════════════════════════════════╣
+║  STOS  (stack)                                │  rośnie          ║
+║  Zmienne lokalne i ramki wywołań              ▼  w dół           ║
+║                                                                  ║
+║  ramka: main()                                                   ║
+║  ┌──────────────────────────────────────────────────────────┐   ║
+║  │  p1 : Point3D  = { x=1.0, y=2.0, z=3.0 }  [na stosie]  │   ║
+║  │  x  : int      = 42                                      │   ║
+║  │  hp : Point3D* ────────────────────────────► (sterta)   │   ║
+║  │  arr: int*     ────────────────────────────► (sterta)   │   ║
+║  │                                                          │   ║
+║  │  ramka: f()                                              │   ║
+║  │  ┌────────────────────────────────────────────────────┐ │   ║
+║  │  │  p2 : Point3D = { x=4.0, y=5.0, z=6.0 }          │ │   ║
+║  │  │  d  : double  = 3.14                               │ │   ║
+║  │  │  ~p2  ← auto przy return z f()  (LIFO)            │ │   ║
+║  │  └────────────────────────────────────────────────────┘ │   ║
+║  │                                                          │   ║
+║  │  ~p1  ← auto przy return z main()  (LIFO)               │   ║
+║  └──────────────────────────────────────────────────────────┘   ║
+╚══════════════════════════════════════════════════════════════════╝
 ```
 
 ---
