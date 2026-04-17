@@ -199,7 +199,7 @@ src/friend_demo.exe
 | Pojęcie              | Znaczenie                                               |
 |----------------------|---------------------------------------------------------|
 | `friend` funkcja     | Funkcja zewnętrzna z dostępem do prywatnych składowych |
-| `friend` klasa       | Wszystkie metody klasy mają dostęp do prywatnych pol   |
+| `friend` klasa       | Wszystkie metody klasy mają dostęp do prywatnych pól   |
 | Asymetryczność       | A friend B ≠ B friend A                                |
 | Typowe użycie        | `operator<<`, iterator + kontener, testy               |
 | Ostrożnie!           | Narusza enkapsulację – stosuj tylko gdy konieczne       |
@@ -208,13 +208,13 @@ src/friend_demo.exe
 
 ## Dobre praktyki, antywzorce i zastosowania
 
-- Dobra praktyka: dawaj `friend` tylko tam, gdzie API publiczne byloby nienaturalne albo nieefektywne.
-- Dobra praktyka: ograniczaj zakres zaprzyjaznienia do konkretnej funkcji zamiast calej klasy.
-- Dobra praktyka: dokumentuj dlaczego `friend` jest potrzebny i jaki zakres dostepu jest wymagany.
-- Antywzorzec: masowe dodawanie `friend` jako skrotu do "obejscia" projektowania interfejsu.
-- Antywzorzec: silne sprzezenie klas przez wzajemne zaprzyjaznianie bez uzasadnienia.
+- Dobra praktyka: dawaj `friend` tylko tam, gdzie API publiczne byłoby nienaturalne albo nieefektywne.
+- Dobra praktyka: ograniczaj zakres zaprzyjaźnienia do konkretnej funkcji zamiast całej klasy.
+- Dobra praktyka: dokumentuj dlaczego `friend` jest potrzebny i jaki zakres dostępu jest wymagany.
+- Antywzorzec: masowe dodawanie `friend` jako skrótu do "obejścia" projektowania interfejsu.
+- Antywzorzec: silne sprzężenie klas przez wzajemne zaprzyjaźnianie bez uzasadnienia.
 - Zastosowanie: operatory strumieniowe, helpery serializacji, testy jednostkowe internali.
-- Zastosowanie: algorytmy wymagajace wydajnego dostepu do stanu prywatnego bez kopiowania.
+- Zastosowanie: algorytmy wymagające wydajnego dostępu do stanu prywatnego bez kopiowania.
 
 ## Zadania dla studentów
 

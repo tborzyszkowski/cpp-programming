@@ -220,13 +220,13 @@ Obserwuj kolejność komunikatów z konstruktorów i destruktorów – ilustruje
 
 ## Dobre praktyki, antywzorce i zastosowania
 
-- Dobra praktyka: inicjalizuj pola lista inicjalizacyjna, a nie przypisaniami w ciele konstruktora.
-- Dobra praktyka: deleguj konstruktory, aby unikac duplikacji kodu inicjalizacji.
-- Dobra praktyka: destruktor powinien tylko sprzatac zasoby i nie rzucac wyjatkow.
-- Antywzorzec: brak kopiowania glebokiego dla zasobow dynamicznych i przypadkowe wspoldzielenie pamieci.
-- Antywzorzec: trzymanie logiki biznesowej w konstruktorze, co utrudnia testy i diagnostyke.
-- Zastosowanie: klasy domenowe z walidacja i kontrola cyklu zycia obiektu.
-- Zastosowanie: obiekty infrastrukturalne, np. uchwyty plikow, polaczenia, cache.
+- Dobra praktyka: inicjalizuj pola listą inicjalizacyjną, a nie przypisaniami w ciele konstruktora.
+- Dobra praktyka: deleguj konstruktory, aby unikać duplikacji kodu inicjalizacji.
+- Dobra praktyka: destruktor powinien tylko sprzątać zasoby i nie rzucać wyjątków.
+- Antywzorzec: brak kopiowania głębokiego dla zasobów dynamicznych i przypadkowe współdzielenie pamięci.
+- Antywzorzec: trzymanie logiki biznesowej w konstruktorze, co utrudnia testy i diagnostykę.
+- Zastosowanie: klasy domenowe z walidacją i kontrolą cyklu życia obiektu.
+- Zastosowanie: obiekty infrastrukturalne, np. uchwyty plików, połączenia, cache.
 
 ## Pliki źródłowe
 

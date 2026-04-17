@@ -174,15 +174,15 @@ Obserwuj adresy pamięci w wyjściu – dla kopii głębokiej będą różne.
 
 ---
 
-## Slajd 10: RAII – bezpieczne zarzadzanie zasobem
+## Slajd 10: RAII – bezpieczne zarządzanie zasobem
 
-**RAII (Resource Acquisition Is Initialization)** oznacza, ze zasob jest pobierany w konstruktorze,
-a zwalniany automatycznie w destruktorze. Dzięki temu unikamy wyciekow pamieci i nie musimy
-pamietac o recznym `delete[]` w kodzie uzywajacym klasy.
+**RAII (Resource Acquisition Is Initialization)** oznacza, że zasób jest pobierany w konstruktorze,
+a zwalniany automatycznie w destruktorze. Dzięki temu unikamy wycieków pamięci i nie musimy
+pamiętać o ręcznym `delete[]` w kodzie używającym klasy.
 
 ```cpp
 class SafeBuffer {
-    std::vector<int> data_;  // RAII: vector sam zwolni pamiec
+    std::vector<int> data_;  // RAII: vector sam zwolni pamięć
 public:
     explicit SafeBuffer(int size) : data_(size) {
         std::iota(data_.begin(), data_.end(), 0);
@@ -202,10 +202,10 @@ int main() {
     b.set(0, 999);
     a.print("a");       // 0 1 2 3 4
     b.print("b");       // 999 1 2 3 4
-} // wyjscie z zakresu => zasoby zwolnione automatycznie
+} // wyjście z zakresu => zasoby zwolnione automatycznie
 ```
 
-Wniosek: RAII upraszcza kod i ogranicza ryzyko bledow zwiazanych z recznym zarzadzaniem pamiecia.
+Wniosek: RAII upraszcza kod i ogranicza ryzyko błędów związanych z ręcznym zarządzaniem pamięcią.
 
 ---
 

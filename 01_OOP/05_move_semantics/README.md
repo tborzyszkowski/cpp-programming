@@ -178,12 +178,12 @@ Obserwuj komunikaty `[Buffer] MOVE ctor` – to potwierdza że przenoszenie dzia
 ## Dobre praktyki, antywzorce i zastosowania
 
 - Dobra praktyka: implementuj move ctor i move assignment jako `noexcept`.
-- Dobra praktyka: po przeniesieniu zostaw obiekt zrodlowy w stanie poprawnym, ale pustym.
-- Dobra praktyka: uzywaj `std::move` swiadomie tylko tam, gdzie obiekt nie bedzie juz potrzebny.
-- Antywzorzec: naduzywanie `std::move` na obiektach, ktore dalej chcesz wykorzystywac.
-- Antywzorzec: brak rozroznienia kopiowania i przenoszenia, co prowadzi do kosztownych kopii.
-- Zastosowanie: kontenery, kolejki zadan, transfer duzych buforow i obiektow tymczasowych.
-- Zastosowanie: optymalizacja wydajnosci w kodzie przetwarzajacym duze wolumeny danych.
+- Dobra praktyka: po przeniesieniu zostaw obiekt źródłowy w stanie poprawnym, ale pustym.
+- Dobra praktyka: używaj `std::move` świadomie tylko tam, gdzie obiekt nie będzie już potrzebny.
+- Antywzorzec: nadużywanie `std::move` na obiektach, które dalej chcesz wykorzystywać.
+- Antywzorzec: brak rozróżnienia kopiowania i przenoszenia, co prowadzi do kosztownych kopii.
+- Zastosowanie: kontenery, kolejki zadań, transfer dużych buforów i obiektów tymczasowych.
+- Zastosowanie: optymalizacja wydajności w kodzie przetwarzającym duże wolumeny danych.
 
 ## Pliki źródłowe
 
