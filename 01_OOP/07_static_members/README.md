@@ -31,9 +31,14 @@ Pola niestatyczne (per-object):             Pole statyczne (shared):
 
 ## Slajd 2: Deklaracja i definicja
 
+Statyczne pole wymaga **dwóch kroków**:
+
+1. **Deklaracja** – wewnątrz klasy (w nagłówku `.h`). Mówi kompilatorowi, że pole istnieje i jaki ma typ. Samo w sobie **nie rezerwuje pamięci**.
+2. **Definicja** – poza klasą (tradycyjnie w pliku `.cpp`). Rezerwuje pamięć i nadaje wartość początkową. Musi istnieć **dokładnie jedna** taka definicja w całym programie (reguła ODR – *One Definition Rule*).
+
 ```cpp
 class BankAccount {
-    // w klasie: DEKLARACJA
+    // w klasie: DEKLARACJA (tylko typ i nazwa, brak pamięci)
     static int    nextId_;          // licznik kont
     static double interestRate_;    // stopa procentowa
     static int    totalAccounts_;   // liczba żywych obiektów
@@ -41,13 +46,20 @@ class BankAccount {
 };
 
 // POZA klasą: DEFINICJA (tradycyjnie w pliku .cpp)
+// Operator :: wskazuje do której klasy należy pole.
+// Tutaj faktycznie alokowana jest pamięć i ustawiana wartość startowa.
 int    BankAccount::nextId_        = 1000;
 double BankAccount::interestRate_  = 0.05;
 int    BankAccount::totalAccounts_ = 0;
 
-// C++17: inline w nagłówku (eliminuje oddzielny .cpp)
+// C++17: słowo kluczowe inline w nagłówku
+// Łączy deklarację z definicją – eliminuje konieczność oddzielnego pliku .cpp.
+// Kompilator sam zadba o to, by w programie istniała tylko jedna kopia.
 inline int    BankAccount::nextId_        = 1000;
 ```
+
+> **Dlaczego dwa kroki?**  
+> Pliki nagłówkowe są włączane (`#include`) do wielu jednostek kompilacji. Gdyby definicja (rezerwacja pamięci) znalazła się w nagłówku bez `inline`, każda jednostka stworzyłaby własną kopię zmiennej – linker zgłosiłby błąd duplikatu. Słowo `inline` (C++17) sygnalizuje linkerowi, że ma zachować tylko jedną kopię.
 
 ---
 
