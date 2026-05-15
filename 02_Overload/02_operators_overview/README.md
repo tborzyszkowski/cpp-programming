@@ -252,6 +252,13 @@ Operator `<=>` (trójstronne porównanie) pozwala zastąpić sześć osobnych op
 
 ### Przeciążenie – wersja domyślna (zalecana)
 
+Użycie `= default` zleca kompilatorowi wygenerowanie operatora automatycznie.
+Kompilator porównuje **pola w kolejności deklaracji**, leksykograficznie (jak w słowniku):
+najpierw pierwsze pole, a jeśli są równe – następne, i tak dalej.
+
+Typ zwracany jest dedukowany jako **najwęższy wspólny typ** spośród typów zwracanych przez `<=>`
+wszystkich pól (np. jeśli jedno pole to `double`, wynik to `partial_ordering`).
+
 ```cpp
 #include <compare>
 
@@ -259,12 +266,33 @@ struct Punkt {
     int x, y;
 
     // Kompilator generuje ==, !=, <, >, <=, >= na podstawie kolejności pól
+    // Typ: strong_ordering (bo oba pola to int)
     auto operator<=>(const Punkt&) const = default;
 };
 
 Punkt a{1, 2}, b{1, 3};
-bool mniej = (a < b);   // działa automatycznie
+// porównanie: najpierw x (1==1 → remis), potem y (2 < 3 → a < b)
+bool mniej = (a < b);   // true
+
+struct Prostokat {
+    double szerokosc, wysokosc;
+
+    // Typ: partial_ordering (bo pola to double – NaN jest nieporównywalne)
+    auto operator<=>(const Prostokat&) const = default;
+};
 ```
+
+**Co generuje kompilator przy `= default`:**
+
+| Wygenerowany operator | Na podstawie |
+|---|---|
+| `operator<=>` | porównanie pól po kolei |
+| `operator==` | porównanie pól po kolei (osobno generowany) |
+| `operator!=` | negacja `operator==` |
+| `operator<` | wynik `<=>` < 0 |
+| `operator>` | wynik `<=>` > 0 |
+| `operator<=` | wynik `<=>` <= 0 |
+| `operator>=` | wynik `<=>` >= 0 |
 
 ### Przeciążenie – wersja ręczna
 
