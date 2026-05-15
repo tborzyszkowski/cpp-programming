@@ -233,6 +233,142 @@ if (t) { /* ... */ }                 // operator bool() — w if() działa nawet
 
 ---
 
+## Slajd 10: Operator statku kosmicznego `<=>` (C++20)
+
+Operator `<=>` (trójstronne porównanie) pozwala zastąpić sześć osobnych operatorów relacyjnych
+(`<`, `>`, `<=`, `>=`, `==`, `!=`) jedną definicją.
+
+### Typ zwracany
+
+```cpp
+#include <compare>
+```
+
+| Typ zwracany | Kiedy użyć | Przykład |
+|---|---|---|
+| `std::strong_ordering` | Pełny porządek, brak remisów | `int`, `long` |
+| `std::weak_ordering` | Porządek, ale remisy możliwe | ciągi case-insensitive |
+| `std::partial_ordering` | Niektóre pary nieporównywalne | `float` (NaN) |
+
+### Przeciążenie – wersja domyślna (zalecana)
+
+```cpp
+#include <compare>
+
+struct Punkt {
+    int x, y;
+
+    // Kompilator generuje ==, !=, <, >, <=, >= na podstawie kolejności pól
+    auto operator<=>(const Punkt&) const = default;
+};
+
+Punkt a{1, 2}, b{1, 3};
+bool mniej = (a < b);   // działa automatycznie
+```
+
+### Przeciążenie – wersja ręczna
+
+```cpp
+#include <compare>
+
+struct Temperatura {
+    double stopnie;
+
+    std::partial_ordering operator<=>(const Temperatura& other) const {
+        return stopnie <=> other.stopnie;  // partial_ordering bo double może być NaN
+    }
+    bool operator==(const Temperatura& other) const {
+        return stopnie == other.stopnie;
+    }
+};
+```
+
+> **Uwaga:** przy ręcznej definicji `<=>` kompilator **nie generuje** `operator==` automatycznie —
+> trzeba go zdefiniować osobno.
+
+---
+
+## Slajd 11: Short-circuit evaluation – dlaczego nie przeciążać `&&` i `||`
+
+**Short-circuit evaluation** (ewaluacja leniwa) oznacza, że drugi operand jest obliczany
+**tylko wtedy, gdy wynik nie jest jeszcze znany** po pierwszym.
+
+### Wbudowane `&&` i `||`
+
+```cpp
+// &&: jeśli lewa strona == false → prawa NIE jest obliczana
+bool wynik = (ptr != nullptr) && ptr->isValid();
+//            ↑ false → zatrzymaj  ↑ bezpieczne, nie wykona się gdy ptr==nullptr
+
+// ||: jeśli lewa strona == true → prawa NIE jest obliczana
+bool wynik2 = (a == 0) || (b / a > 2);
+//             ↑ true → zatrzymaj  ↑ bezpieczne, brak dzielenia przez zero
+```
+
+### Po przeciążeniu – short-circuit **zanika**
+
+```cpp
+struct Flaga {
+    bool val;
+    Flaga operator&&(const Flaga& rhs) const { return {val && rhs.val}; }
+};
+
+Flaga a{false}, b = oblicz_cokolwiek();
+Flaga wynik = a && b;
+// oblicz_cokolwiek() ZAWSZE się wywoła – przeciążony operator to zwykła funkcja,
+// a przed jej wywołaniem oba argumenty muszą być obliczone
+```
+
+| | Typy wbudowane | Przeciążony `operator&&` |
+|---|---|---|
+| Kolejność obliczeń | lewa → prawa (leniwie) | obie strony **zawsze** |
+| Efekty uboczne prawej strony | możliwe do pominięcia | **zawsze** wystąpią |
+| Bezpieczeństwo z nullptr | tak | nie gwarantowane |
+
+> **Meyers (Effective C++, poz. 23):** Nie przeciążaj `&&`, `||` ani `,`.
+
+---
+
+## Slajd 12: Operator przecinka `,` – gwarancja kolejności
+
+Wbudowany operator `,` to **operator sekwencji**: oblicza lewy operand, odrzuca jego wartość,
+oblicza prawy i zwraca jego wartość. Gwarantuje zdefiniowaną kolejność i punkt sekwencji.
+
+### Wbudowany `,`
+
+```cpp
+int a = 0, b = 0, c = 5;
+int x = (a++, b++, c);
+// 1. a++ → a == 1
+// 2. b++ → b == 1
+// 3. wynik wyrażenia == c == 5 → x = 5
+
+// Najczęstsze użycie – pętla for z wieloma zmiennymi:
+for (int i = 0, j = 10; i < j; ++i, --j) { /* ... */ }
+//                                    ↑ operator ,
+```
+
+### Po przeciążeniu – kolejność **zanika**
+
+```cpp
+struct Kolekcja {
+    Kolekcja operator,(const Kolekcja& rhs) const { /* ... */ }
+};
+
+Kolekcja a = generuj(), b = generuj2();
+Kolekcja wynik = (a, b);
+// kolejność obliczania argumentów funkcji w C++ jest NIEOKREŚLONA –
+// kompilator może najpierw wywołać generuj2(), potem generuj()
+```
+
+| | Wbudowany `,` | Przeciążony `operator,` |
+|---|---|---|
+| Kolejność obliczeń | lewa → prawa (**gwarantowana**) | **nieokreślona** |
+| Punkt sekwencji | tak | nie |
+| Wartość wyrażenia | wartość prawego operandu | zależy od implementacji |
+
+---
+
 ## Podsumowanie
 
 | Pytanie | Odpowiedź |
