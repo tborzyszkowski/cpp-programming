@@ -1,0 +1,74 @@
+@startuml functors_diagram
+
+skinparam classAttributeIconSize 0
+skinparam backgroundColor #FAFAFA
+skinparam shadowing false
+skinparam class {
+    BackgroundColor #EEF2FF
+    BorderColor #4A5AE0
+    ArrowColor #333
+}
+skinparam note {
+    BackgroundColor #FFFDE7
+    BorderColor #FBC02D
+}
+
+title Callable w C++ – hierarchia i porównanie
+
+abstract class "Callable\n(konceptualny)" as callable {
+    + operator()(args) : R
+}
+
+class "Wskaźnik\nna funkcję" as fptr {
+    + R(*)(Args...)
+}
+
+class "Funktor\n(klasa z operator())" as functor {
+    - stan: pola klasy
+    + operator()(args) : R
+}
+
+class "Lambda\n[przechwycenie](params)" as lambda {
+    - domknięcie: kopia/ref
+    + operator()(args) : R <<const>>
+}
+
+class "std::function<R(Args...)>" as stdfunc {
+    - storage: type-erased callable
+    + operator()(args) : R
+    + target<T>() : T*
+}
+
+callable <|-- fptr
+callable <|-- functor
+callable <|-- lambda
+fptr --> stdfunc : można przypisać
+functor --> stdfunc : można przypisać
+lambda --> stdfunc : można przypisać
+
+note right of fptr
+  Brak stanu.
+  Najtańsze wywołanie.
+  int f(int x);
+end note
+
+note right of functor
+  Stan w polach.
+  Inline – zero narzutu.
+  struct Greater { int n; ... };
+end note
+
+note right of lambda
+  Stan przez przechwycenie.
+  Inline – zero narzutu.
+  [n](int x){ return x > n; }
+end note
+
+note right of stdfunc
+  Type erasure – koszt alokacji.
+  Potrzebne gdy callable
+  musi być przechowane
+  w zmiennej/kontenerze.
+end note
+
+@enduml

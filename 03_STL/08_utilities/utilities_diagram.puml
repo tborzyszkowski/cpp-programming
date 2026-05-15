@@ -1,0 +1,59 @@
+@startuml utilities_diagram
+
+skinparam backgroundColor #FAFAFA
+skinparam shadowing false
+skinparam rectangle {
+    BackgroundColor #EEF2FF
+    BorderColor #4A5AE0
+    FontSize 11
+}
+skinparam note {
+    BackgroundColor #FFFDE7
+    BorderColor #FBC02D
+}
+
+title Narzędzia ogólne C++ – <utility>, <optional>, <variant>, <chrono>, <filesystem>
+
+rectangle "<utility> / <tuple>" as util {
+    rectangle "pair<T1,T2>\nmake_pair()\nfirst, second" as pair #D1FAE5
+    rectangle "tuple<T...>\nmake_tuple()\nget<N>()" as tup #D1FAE5
+}
+
+rectangle "<optional> (C++17)" as opt_box {
+    rectangle "optional<T>\nnullopt\nhas_value()\nvalue()\nvalue_or(def)" as opt #DBEAFE
+}
+
+rectangle "<variant> (C++17)" as var_box {
+    rectangle "variant<T1,T2,...>\nget<T>()\nholds_alternative<T>()\nvisit(visitor, v)" as var #EDE9FE
+}
+
+rectangle "<any> (C++17)" as any_box {
+    rectangle "any\nany_cast<T>()\nhas_value()\ntype()\nreset()" as any #FEE2E2
+}
+
+rectangle "<chrono>" as chr {
+    rectangle "steady_clock\nsystem_clock\nduration\ntime_point\nduration_cast<>()" as chrono #FEF3C7
+}
+
+rectangle "<filesystem> (C++17)" as fss {
+    rectangle "path\nexists()\ncopy()\nremove()\ndirectory_iterator\nrecursive_iterator" as fs #D1FAE5
+}
+
+note bottom of opt_box
+  Wartość lub nullopt.
+  Zastępuje: bool+T, wskaźnik, sentinel.
+end note
+
+note bottom of var_box
+  Typebezpieczna unia.
+  Zawsze aktywny jeden typ.
+  Preferuj nad std::any gdy typy znane.
+end note
+
+note bottom of any_box
+  Dowolny typ (type erasure).
+  Cięższy niż variant.
+  Użyj gdy typy nieznane w kompilacji.
+end note
+
+@enduml

@@ -1,0 +1,65 @@
+@startuml sequence_diagram
+
+skinparam backgroundColor #FAFAFA
+skinparam shadowing false
+skinparam rectangle {
+    BackgroundColor #EEF2FF
+    BorderColor #4A5AE0
+}
+skinparam note {
+    BackgroundColor #FFFDE7
+    BorderColor #FBC02D
+}
+
+title Kontenery sekwencyjne – układ pamięci
+
+rectangle "std::vector\n(ciągła pamięć)" as vec {
+    rectangle " 1 " as v1 #D1FAE5
+    rectangle " 2 " as v2 #D1FAE5
+    rectangle " 3 " as v3 #D1FAE5
+    rectangle " 4 " as v4 #D1FAE5
+    rectangle "   " as v5 #F3F4F6
+    rectangle "   " as v6 #F3F4F6
+    v1 -right-> v2
+    v2 -right-> v3
+    v3 -right-> v4
+    v4 -right-> v5
+    v5 -right-> v6
+}
+
+note bottom of vec
+  size=4, capacity=6
+  Dostęp O(1), push_back O(1)*
+  push_front O(n)
+end note
+
+rectangle "std::deque\n(segmenty)" as deq {
+    rectangle "blok1\n[1][2]" as d1 #DBEAFE
+    rectangle "blok2\n[3][4]" as d2 #DBEAFE
+    rectangle "blok3\n[5][ ]" as d3 #DBEAFE
+}
+
+note bottom of deq
+  push_front O(1)*, push_back O(1)*
+  Dostęp O(1), nie ciągła pamięć
+end note
+
+rectangle "std::list\n(węzły)" as lst {
+    rectangle "prev|1|next" as l1 #FEE2E2
+    rectangle "prev|2|next" as l2 #FEE2E2
+    rectangle "prev|3|next" as l3 #FEE2E2
+    l1 -right-> l2
+    l2 -right-> l3
+    l2 -left-> l1
+    l3 -left-> l2
+}
+
+note bottom of lst
+  insert/erase O(1) przy iteratorze
+  Dostęp O(n), brak lokalności
+end note
+
+vec -down-> deq
+deq -down-> lst
+
+@enduml

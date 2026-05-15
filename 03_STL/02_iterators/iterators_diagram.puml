@@ -1,0 +1,84 @@
+@startuml iterators_diagram
+
+skinparam classAttributeIconSize 0
+skinparam backgroundColor #FAFAFA
+skinparam shadowing false
+skinparam class {
+    BackgroundColor #EEF2FF
+    BorderColor #4A5AE0
+    ArrowColor #333
+}
+skinparam note {
+    BackgroundColor #FFFDE7
+    BorderColor #FBC02D
+}
+
+title Hierarchia kategorii iteratorów C++
+
+class InputIterator {
+    + operator*() : T  /' odczyt '/
+    + operator++() : It&
+    + operator==(It) : bool
+}
+
+class OutputIterator {
+    + operator*() : T&  /' zapis '/
+    + operator++() : It&
+}
+
+class ForwardIterator {
+    /' wielokrotne przejście '/
+}
+
+class BidirectionalIterator {
+    + operator--() : It&
+}
+
+class RandomAccessIterator {
+    + operator+(n) : It
+    + operator-(n) : It
+    + operator[](n) : T&
+    + operator<(It) : bool
+}
+
+class ContiguousIterator {
+    /' gwarantuje ciągłość pamięci '/
+}
+
+InputIterator  <|-- ForwardIterator
+OutputIterator <|-- ForwardIterator
+ForwardIterator <|-- BidirectionalIterator
+BidirectionalIterator <|-- RandomAccessIterator
+RandomAccessIterator <|-- ContiguousIterator
+
+note right of InputIterator
+  Przykłady:
+  istream_iterator
+end note
+
+note right of ForwardIterator
+  Przykłady:
+  forward_list::iterator
+end note
+
+note right of BidirectionalIterator
+  Przykłady:
+  list::iterator
+  map::iterator
+  set::iterator
+end note
+
+note right of RandomAccessIterator
+  Przykłady:
+  deque::iterator
+end note
+
+note right of ContiguousIterator
+  Przykłady:
+  vector::iterator
+  array::iterator
+  string::iterator
+  T* (zwykły wskaźnik)
+end note
+
+@enduml

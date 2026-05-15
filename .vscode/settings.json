@@ -57,7 +57,9 @@
   "C_Cpp_Runner.useLinkTimeOptimization": false,
   "C_Cpp_Runner.msvcSecureNoWarnings": false,
   "chat.tools.terminal.autoApprove": {
-    "&": true
+    "&": true,
+    "Get-Command": true,
+    "java": true
   },
     "workbench.colorTheme": "Light 2026"
 }

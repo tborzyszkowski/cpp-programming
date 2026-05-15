@@ -1,0 +1,72 @@
+@startuml string_diagram
+
+skinparam classAttributeIconSize 0
+skinparam backgroundColor #FAFAFA
+skinparam shadowing false
+skinparam class {
+    BackgroundColor #EEF2FF
+    BorderColor #4A5AE0
+    ArrowColor #333
+}
+skinparam note {
+    BackgroundColor #FFFDE7
+    BorderColor #FBC02D
+}
+
+title std::string – układ pamięci (SSO) i typy
+
+class "std::string\n(basic_string<char>)" as str {
+    - ptr_or_buf : union
+    - size_ : size_t
+    - capacity_ : size_t
+    --
+    + size() : size_t
+    + c_str() : const char*
+    + substr(pos, len) : string
+    + find(s) : size_t
+    + starts_with(s) : bool  /' C++20 '/
+}
+
+class "std::string_view\n(basic_string_view<char>)" as sv {
+    - ptr_ : const char*
+    - size_ : size_t
+    --
+    + size() : size_t
+    + substr(pos, len) : string_view
+    + find(s) : size_t
+    + starts_with(s) : bool  /' C++20 '/
+    /' Nie posiada danych! '/
+}
+
+class "std::wstring\n(basic_string<wchar_t>)" as wstr {
+    /' szerokie znaki (2 lub 4 bajty) '/
+}
+
+class "std::u8string\n(basic_string<char8_t>)" as u8str {
+    /' UTF-8 (C++20) '/
+}
+
+str <.. sv : widok na dane\n(zero kopii)
+str <|-- wstr
+str <|-- u8str
+
+note right of str
+  SSO (Small String Optimization):
+  krótkie stringi (≤ ~15 znaków)
+  przechowywane inline w obiekcie,
+  bez alokacji na stercie.
+  ┌────────────────┐
+  │ ptr=buf│size=5 │
+  │ buf: H e l l o│
+  └────────────────┘
+end note
+
+note right of sv
+  Tylko wskaźnik + długość.
+  Nie kopiuje danych.
+  Nie zarządza życiem bufora.
+  Bezpieczne dla string-literałów
+  i std::string.
+end note
+
+@enduml

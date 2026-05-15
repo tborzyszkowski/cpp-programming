@@ -1,0 +1,49 @@
+@startuml associative_diagram
+
+skinparam backgroundColor #FAFAFA
+skinparam shadowing false
+skinparam class {
+    BackgroundColor #EEF2FF
+    BorderColor #4A5AE0
+    ArrowColor #333
+}
+skinparam note {
+    BackgroundColor #FFFDE7
+    BorderColor #FBC02D
+}
+
+title Kontenery asocjacyjne – drzewo RB vs. tablica hashująca
+
+rectangle "map / set\n(drzewo czerwono-czarne)" as rbt {
+    rectangle "     5(B)     " as n5 #DBEAFE
+    rectangle "  3(R)     8(R)  " as n38 #FEE2E2
+    rectangle "1(B) 4(B) 7(B) 9(B)" as leaves #DBEAFE
+    n5 -down-> n38
+    n38 -down-> leaves
+}
+
+note bottom of rbt
+  Złożoność: O(log n)
+  Iteracja: posortowana
+  Wymaganie: operator<
+  Klucze: 1,3,4,5,7,8,9
+end note
+
+rectangle "unordered_map / unordered_set\n(tablica hashująca)" as ht {
+    rectangle "bucket[0]: →" as b0 #D1FAE5
+    rectangle "bucket[1]: → \"Anna\"→5" as b1 #D1FAE5
+    rectangle "bucket[2]: →" as b2 #D1FAE5
+    rectangle "bucket[3]: → \"Bartek\"→4" as b3 #D1FAE5
+    rectangle "bucket[4]: → \"Celina\"→5" as b4 #D1FAE5
+}
+
+note bottom of ht
+  Złożoność: O(1) avg
+  Iteracja: dowolna kolejność
+  Wymaganie: std::hash + operator==
+  load_factor = size / bucket_count
+end note
+
+rbt -right[hidden]-> ht
+
+@enduml

@@ -1,0 +1,44 @@
+@startuml algorithms_diagram
+
+skinparam backgroundColor #FAFAFA
+skinparam shadowing false
+skinparam rectangle {
+    BackgroundColor #EEF2FF
+    BorderColor #4A5AE0
+    FontSize 11
+}
+skinparam note {
+    BackgroundColor #FFFDE7
+    BorderColor #FBC02D
+}
+
+title Mapa algorytmów STL – kategorie i nagłówki
+
+rectangle "<algorithm>" as alg {
+    rectangle "Niemodyfikujące\nfind, find_if\ncount, count_if\nall_of, any_of, none_of\nmin/max_element" as nonmod #D1FAE5
+    rectangle "Modyfikujące\ntransform, fill, iota\nreplace, replace_if\ncopy, copy_if\nreverse, rotate" as mod #DBEAFE
+    rectangle "Sortowanie\nsort, stable_sort\npartial_sort\nnth_element\nis_sorted" as srt #EDE9FE
+    rectangle "Posortowane\nbinary_search\nlower/upper_bound\nequal_range\nmerge" as sorted #FEE2E2
+    rectangle "Usuwanie\nremove, remove_if\nunique\n(idiom erase-remove)" as rem #FEF3C7
+}
+
+rectangle "<numeric>" as num {
+    rectangle "Redukcja\naccumulate\nreduce (C++17)\npartial_sum\ninner_product" as red #D1FAE5
+}
+
+rectangle "<ranges>\n(C++20)" as rng {
+    rectangle "Ranges + Views\nranges::sort\nviews::filter\nviews::transform\nviews::take/drop" as views #EDE9FE
+}
+
+note bottom of alg
+  Działają na zakresach [first, last)
+  Wymagają odpowiedniej kategorii iteratora
+end note
+
+note bottom of num
+  Operacje numeryczne
+  reduce może być równoległy
+  z execution::par
+end note
+
+@enduml

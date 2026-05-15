@@ -1,0 +1,61 @@
+@startuml history_diagram
+
+skinparam backgroundColor #FAFAFA
+skinparam shadowing false
+skinparam timeline {
+    BackgroundColor #EEF2FF
+    BorderColor #4A5AE0
+}
+skinparam note {
+    BackgroundColor #FFFDE7
+    BorderColor #FBC02D
+}
+skinparam rectangle {
+    BackgroundColor #EEF2FF
+    BorderColor #4A5AE0
+}
+
+title Ewolucja Biblioteki Standardowej C++
+
+rectangle "C++98\n(1998)" as cpp98 #D1FAE5
+rectangle "C++11\n(2011)" as cpp11 #DBEAFE
+rectangle "C++17\n(2017)" as cpp17 #EDE9FE
+rectangle "C++20\n(2020)" as cpp20 #FEE2E2
+
+cpp98 -right-> cpp11 : 13 lat
+cpp11 -right-> cpp17 : 6 lat
+cpp17 -right-> cpp20 : 3 lata
+
+note bottom of cpp98
+  Podstawy STL:
+  vector, list, map, set
+  sort, find, transform
+  string, iostream
+end note
+
+note bottom of cpp11
+  Rewolucja:
+  unordered_map/set
+  array, tuple, regex
+  thread, mutex
+  unique_ptr, shared_ptr
+  lambdy
+end note
+
+note bottom of cpp17
+  Nowoczesność:
+  optional, variant, any
+  string_view
+  filesystem
+  execution policies
+end note
+
+note bottom of cpp20
+  Ranges:
+  std::ranges::sort(v)
+  span, format
+  jthread, coroutine
+  contains() w kontenerach
+end note
+
+@enduml
