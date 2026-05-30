@@ -1,5 +1,7 @@
 # Lambda – Historia i Motywacja
 
+![Diagram](history_diagram.png)
+
 ## Slajd 1: Pierwsze callable – wskaźniki na funkcje (C, C++98)
 
 Już w C można było przekazywać funkcje przez wskaźniki:

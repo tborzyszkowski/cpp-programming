@@ -1,5 +1,7 @@
 # Lambda – Zastosowania Praktyczne
 
+![Diagram](practical_diagram.png)
+
 ## Slajd 1: Lambdy z algorytmami STL – podstawowe wzorce
 
 To najczęstsze zastosowanie lambd — jako predykaty, transformacje i operacje:

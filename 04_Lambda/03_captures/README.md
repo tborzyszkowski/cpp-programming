@@ -1,5 +1,7 @@
 # Lambda – Przechwycenie i Domknięcia
 
+![Diagram](captures_diagram.png)
+
 ## Slajd 1: Czym jest domknięcie (closure)
 
 **Domknięcie** (*closure*) to funkcja wraz ze środowiskiem — zestawem zmiennych

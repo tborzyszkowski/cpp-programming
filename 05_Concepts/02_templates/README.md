@@ -1,5 +1,7 @@
 # Szablony – Składnia i Mechanizmy
 
+![Diagram](templates_diagram.png)
+
 ## Slajd 1: Szablony funkcji – podstawy
 
 ```cpp

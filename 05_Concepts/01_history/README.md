@@ -1,5 +1,7 @@
 # Szablony – Historia i Motywacja
 
+![Diagram](history_diagram.png)
+
 ## Slajd 1: Życie przed szablonami – makra preprocesora
 
 Przed C++98 jedynym sposobem na „generyczny" kod w C było użycie makr:

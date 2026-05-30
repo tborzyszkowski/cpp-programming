@@ -1,5 +1,7 @@
 # Lambda – Zaawansowane Cechy
 
+![Diagram](advanced_diagram.png)
+
 ## Slajd 1: Lambdy generyczne – `auto` parametry (C++14)
 
 W C++14 parametry lambdy mogą być `auto`, tworząc **szablonowy `operator()`**:

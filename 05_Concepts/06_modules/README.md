@@ -1,5 +1,7 @@
 # Moduły C++20
 
+![Diagram](modules_diagram.png)
+
 ## Slajd 1: Problemy z `#include`
 
 Przez 50 lat C++ korzystał z systemu nagłówków odziedziczonego z C. Niesie to ze sobą poważne problemy:

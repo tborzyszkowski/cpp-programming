@@ -1,5 +1,7 @@
 # Type Erasure
 
+![Diagram](type_erasure_diagram.png)
+
 ## Slajd 1: Problem – przechowywanie heterogenicznych typów
 
 Szablony w C++ są świetne, ale generują odrębny kod dla każdego `T`.

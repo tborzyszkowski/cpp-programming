@@ -1,5 +1,7 @@
 # Concepts – C++20
 
+![Diagram](concepts_diagram.png)
+
 ## Slajd 1: Motywacja – dlaczego Concepts?
 
 Problem: Szablony C++ bez concepts mają **niejasne komunikaty błędów**:

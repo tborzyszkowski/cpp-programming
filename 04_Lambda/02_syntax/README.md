@@ -1,5 +1,7 @@
 # Lambda – Składnia i Komponenty
 
+![Diagram](syntax_diagram.png)
+
 ## Slajd 1: Anatomia lambdy — wszystkie elementy
 
 ```

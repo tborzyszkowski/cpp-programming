@@ -9,12 +9,10 @@ title C++20 Concepts – Struktura i Relacje
 
 package "Definicja Concept" {
     class "concept Nazwa" as CDEF {
-        template<typename T>
-        concept C = requires(T x) {
-          wyrażenie_proste;
-          { expr } -> same_as<T>;
-          typename T::nested;
-        }
+        concept C = requires(T x)
+        wyrażenie proste
+        { expr } -> same_as
+        typename T::nested
     }
 }
 
@@ -24,7 +22,7 @@ package "Zastosowanie" {
     class "C auto x" as USE3
 }
 
-package "Wbudowane <concepts>" {
+package "Wbudowane (concepts)" {
     class "integral / floating_point" as NUM
     class "same_as / convertible_to" as CONV
     class "movable / copyable / regular" as OBJ

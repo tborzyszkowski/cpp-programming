@@ -1,5 +1,7 @@
 # Duck Typing w C++
 
+![Diagram](duck_typing_diagram.png)
+
 ## Slajd 1: Czym jest Duck Typing?
 
 > *„Jeśli chodzi jak kaczka i kwacze jak kaczka, to jest kaczką."*
