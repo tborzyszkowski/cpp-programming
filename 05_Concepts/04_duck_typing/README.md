@@ -24,6 +24,15 @@ def posortuj(kolekcja):
 | Strukturalny statyczny | Czas kompilacji, po API | **C++ templates** |
 | Strukturalny z kontraktem | Czas kompilacji + dokumentacja | **C++ concepts** |
 
+**Typowanie nominatywne vs. strukturalne.** W Javie, by przekazać `ArrayList` tam gdzie
+oczekiwana jest `List`, `ArrayList` musi **zadeklarować** implementację interfejsu `List` —
+to typowanie nominatywne (ważna jest nazwa, nie struktura). W C++ szablonach wystarczy,
+że typ *ma* wymagane operacje — nie musi nic deklarować ani dziedziczyć. To strukturalne:
+liczy się kształt API, nie deklaracja. Konsekwencja: można użyć klasy z zewnętrznej
+biblioteki (nawet bez kodu źródłowego) w algorytmie C++ — jeśli ma właściwe metody,
+„kwacze". Ta elastyczność jest kluczowa dla interoperabilności bibliotek bez modyfikacji
+cudzego kodu.
+
 ---
 
 ## Slajd 2: C++ templates jako niejawny duck typing
@@ -51,6 +60,15 @@ rozmiar(std::map<int,int>{});      // OK – map ma size()
 - Pytamy się: `T` czy kwacze (ma `operator<`)? 
 - Nie pytamy: `T` dziedziczy po `Sortable`?
 - Jeśli nie kwacze → błąd kompilacji (z trudnym komunikatem w pre-C++20)
+
+**Błąd w miejscu instancjacji, nie definicji.** Gdy `T` nie spełnia niejawnego kontraktu
+szablonu, błąd kompilacji wskazuje na **miejsce instancjacji** (linia wywołania) i na
+**wnętrze szablonu** (linia `x.size()`), ale bez wyjaśnienia DLACZEGO jest błąd.
+Kompilator dosłownie mówi: „nie możesz wywołać `.size()` na `int`" — poprawna informacja,
+ale bez kontekstu co do tego, czego oczekiwała funkcja. To sedno problemu niejawnego duck
+typing: kontrakt istnieje, ale nie jest wyrażony wprost. IDE nie może podpowiadać,
+dokumentacja nie może być automatycznie weryfikowana. Concepts rozwiązują ten problem
+przez **eksplicytny kontrakt**.
 
 ---
 
@@ -87,6 +105,15 @@ iteruj(std::string{"abc"});        // też "kaczka kontenerowa"
 iteruj(42);                        // "nie-kaczka"
 ```
 
+**SFINAE: jawny, ale nieczytelny.** Kod SFINAE z `void_t` i `declval` jest poprawny
+i wydajny, ale czytać go może tylko programista zaznajomiony z idiomami metaprogramowania.
+Dwa problemy praktyczne: (1) **utrzymanie** — dodanie nowego wymagania wymaga modyfikacji
+struktury `MaBeginEnd` w kilku miejscach; (2) **komunikat błędu** — gdy typ nie spełnia
+wymagania, kompilator wskazuje na selekcję SFINAE, a nie na konkretny brakujący element.
+SFINAE jest jednak nadal wartościowe w kodzie C++11/14/17 i przy bardziej zaawansowanych
+technikach wykrywania (np. sprawdzanie, czy operacja jest noexcept). W C++20 `void_t`
+zastępuje się `requires`, a `enable_if` zastępuje klauzulą `requires`.
+
 ---
 
 ## Slajd 4: Concepts jako jawny, czytelny duck typing
@@ -118,6 +145,15 @@ drukuj(std::string{"hello"});         // OK (ma begin/end/size/value_type)
 // Błąd: "int does not satisfy Kaczkowy_Kontener"
 //   (wymagane: begin(), end(), size(), value_type)
 ```
+
+**Concept jako precyzyjny komunikat błędu.** Gdy `int` nie spełnia `Kaczkowy_Kontener`,
+nowoczesny kompilator (GCC 10+, Clang 10+) wypisuje **każde niespełnione wymaganie z
+osobna**: brakujące `begin()`, `end()`, `size()`, `value_type`. Nie trzeba zgadywać
+— błąd jest enumem wymagań. To fundamentalna różnica w DX (Developer Experience):
+zamiast śledzić długi stos instancjacji szablonów, dostajemy czytelną listę kontrolną.
+Zrozumienie tego komunikatu nie wymaga znajomości implementacji funkcji — wystarczy
+znać concept. Dla twórców bibliotek to istotna zmiana: mogą definiować concepts w
+nagłówkach publicznych jako **dokumentację weryfikowaną przez kompilator**.
 
 ---
 
@@ -164,6 +200,16 @@ glosno(Traktor{}); // OK
 // glosno(42);     // BŁĄD KOMPILACJI (nie w runtime!)
 ```
 
+**Compile-time vs. runtime — koszt sprawdzania typów.** W Pythonie każde wywołanie
+`zwierze.dzwiek()` sprawdza w czasie wykonania, czy obiekt ma atrybut `dzwiek`. To
+jest nakład niezerowy — interpreter szuka w słowniku atrybutów obiektu. Gdy metody nie
+ma, `AttributeError` pojawia się dopiero gdy kod faktycznie wykona tę ścieżkę. W C++
+z concepts cały koszt sprawdzania ponosi **kompilator** — w binarce nie ma żadnych
+dodatkowych instrukcji dla weryfikacji kontraktu. Praktyczna implikacja: Python-owy duck
+typing działa też dla dynamicznie tworzonych obiektów i monkey-patchowania, ale płaci
+za to kosztem runtime. C++ statyczny duck typing jest zero-cost, ale wymaga, by typy
+były znane w czasie kompilacji.
+
 ---
 
 ## Slajd 6: Duck typing a dziedziczenie – trade-offs
@@ -193,6 +239,15 @@ struct Kot { std::string dzwiek() const { return "Miau"; } };
 | Polimorfizm | Runtime | Compile-time |
 | Narzut wydajnościowy | vtable, pointer | Zero (inlining) |
 | Łatwość testowania | Wymaga mock'ów | Dowolna struktura |
+
+**Kiedy używać którego podejścia.** Dziedziczenie jest właściwym wyborem gdy potrzebujemy
+**heterogenicznego polimorfizmu runtime** — przechowywania różnych typów w jednej
+kolekcji (`std::vector<unique_ptr<IZwierze>>`). Duck typing przez concepts jest właściwe
+gdy działamy tylko na **jednym typie na raz** w szablonie — algorytmy generyczne, biblioteki.
+Dziedziczenie wiąże klasy w hierarchię na zawsze; concepts pozwalają dodawać nowe typy
+bez modyfikacji istniejącego kodu (nawet bez dostępu do źródeł). Wadą duck typing jest
+brak runtime polymorphism — jeśli potrzebujemy `vector<dowolnych_kaczek>`, musimy użyć
+type erasure (patrz 05_type_erasure).
 | Czytelność błędów | Dobra | Dobra (z concepts) |
 
 ---
@@ -237,3 +292,13 @@ double calkowite_pole(const std::vector<K>& ksztalty) {
     return suma;
 }
 ```
+
+**OCP przez duck typing — eliminacja warstwy pośredniej.** Open/Closed Principle mówi:
+kod powinien być otwarty na rozszerzenie, zamknięty na modyfikację. Klasyczna realizacja
+OOP wymaga interfejsu (`IKsztalt`) i dziedziczenia — każda nowa figura musi zadeklarować
+`implements IKsztalt`. Duck typing z concepts całkowicie eliminuje tę warstwę: `ZewnetrznaFigura`
+spełnia kontrakt `Ksztalt` **strukturalnie**, bez żadnej deklaracji. Nowe klasy (nawet z
+zewnętrznych bibliotek kompilowanych bez znajomości naszego kodu) automatycznie działają
+z algorytmem `calkowite_pole`, jeśli mają odpowiednie metody. Ograniczenie: `vector<K>`
+wymaga jednorodnego typu — jeśli potrzebujemy `vector<dowolnych_kształtów>`, konieczny
+jest runtime polymorphism przez `unique_ptr<IKsztalt>` lub type erasure.

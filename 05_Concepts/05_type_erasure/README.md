@@ -29,6 +29,14 @@ callbacks.push_back(lambda2);
 callbacks.push_back(Funktor{});
 ```
 
+**Dlaczego lambdy mają różne typy?** W C++ każda lambda jest **odrębnym, unikalnym typem**
+generowanym przez kompilator (analogicznie do anonimowej klasy z `operator()`). `lambda1`
+i `lambda2` są różnymi typami nawet jeśli mają identyczną sygnaturę — to konsekwencja
+tego, że każda lambda może przechwytywać inne zmienne i mieć inne składowe. Oznacza to,
+że `std::vector<decltype(lambda1)>` może przechowywać wyłącznie kopie `lambda1`, nie
+`lambda2`. Type erasure to technika **schowania** konkretnego typu za interfejsem —
+płacimy kosztem pośredniego wywołania, zyskując jednorodną kolekcję obiektów różnych typów.
+
 ---
 
 ## Slajd 2: Type erasure przez wirtualne funkcje
@@ -70,6 +78,15 @@ for (const auto& f : figury)
 
 **Wady:** vtable overhead, heap allocation, konieczność dziedziczenia.
 
+**Mechanizm vtable i koszt wywołania.** Każda klasa z wirtualnymi metodami ma **tablicę
+wskaźników** (vtable) — jeden wskaźnik na wirtualną metodę, plus wskaźnik `vptr` w
+każdym obiekcie. Wywołanie `f->pole()` to dwa pośrednie dereferencje: najpierw odczyt
+`vptr` z obiektu, następnie skok pod adres z vtable — to **indirect call** niemożliwe
+do zinlinowania przez kompilator. Ponadto `make_unique<Kolo>` alokuje obiekt na stercie —
+każda figura żyje pod innym adresem pamięci, co niszczy lokalność danych (cache misses).
+Dla kolekcji setek figur to istotny koszt. Niemniej, ta technika jest zrozumiała, łatwa
+w debugowaniu i odpowiednia gdy koszt wywołania jest akceptowalny.
+
 ---
 
 ## Slajd 3: `std::function` – type erasure dla callable
@@ -102,6 +119,15 @@ handlers.push_back([](const std::string& s) { std::cerr << "Err: " << s; });
 // - Duże obiekty: alokacja na stercie + wskaźnik do vtable
 // Koszt: zazwyczaj jedna pośrednia (indirect) call przez wskaźnik
 ```
+
+**Jak działa SBO w `std::function`.** Small Buffer Optimization (SBO) to technika, w
+której `std::function` zawiera wewnętrzny bufor (typowo 16–32 bajty) — jeśli przechowywany
+obiekt zmieści się w buforze, nie ma alokacji sterty. Lambda bez przechwyconych zmiennych
+lub z jednym małym polem zmieści się w SBO. Większe lambdy (przechwytujące kilka dużych
+zmiennych) trafiają na stertę. Koszt `std::function` to zawsze **pośrednie wywołanie**
+— kompilator nie może zinlinować wywołania, bo nie zna konkretnego callabla w czasie
+kompilacji. Alternatywy dla hot-path: `function_ref` (widok na callable, bez własności)
+lub szablony z `auto` (bezpośrednie wywołanie, ale tylko jeden typ).
 
 ---
 
@@ -141,6 +167,15 @@ config["port"]    = 8080;
 config["debug"]   = true;
 config["timeout"] = 30.5;
 ```
+
+**RTTI wewnątrz `std::any`.** `std::any` używa mechanizmu **RTTI** (Runtime Type
+Information) — przechowuje wskaźnik `type_info` opisujący aktualnie trzymany typ. `x.type()`
+zwraca `std::type_info` pozwalający porównać typ przez `typeid(int)`. `std::any_cast<T>(x)`
+sprawdza: czy przechowywany typ to `T`? Jeśli nie — rzuca `bad_any_cast`. Podobnie jak
+`std::function`, `std::any` używa SBO (typowo 8–16 bajtów). Praktyczna pułapka: jeśli
+trzymamy `std::any` przechowujący `int` i castujemy do `long` — wyjątek! Typy muszą
+pasować **dokładnie**. `std::any` jest odpowiedni dla konfiguracji, heterogenicznych map,
+ale nie tam gdzie liczy się wydajność lub bezpieczeństwo typów.
 
 ---
 
@@ -182,6 +217,16 @@ if (std::holds_alternative<int>(w)) {
 // ✓ Sprawdzanie kompletności case (std::visit)
 // ✗ Lista typów musi być znana z góry (zamknięta)
 ```
+
+**`std::variant` jako discriminated union.** Wariant przechowuje wartość **na stosie**
+w buforze o rozmiarze `max(sizeof(Ts)...)` — brak alokacji sterty, brak wskaźników.
+Dodatkowy dyskryminator (zazwyczaj `int`) wskazuje, który typ jest aktualnie aktywny.
+`std::visit` wymaga obsłużenia **każdego** wariantu — kompilator zgłosi błąd gdy
+pominiemy case, co eliminuje błędy zapomnienia (analogicznie do `switch` bez `default`
+gdy używamy `enum class`). Overload pattern (`struct Visitor { using operator()... }`)
+to elegancki sposób definicji visitora inline. Kluczowa właściwość: zmiana `w` z `int`
+na `string` niszczy poprzednią wartość i konstruuje nową na miejscu — `variant` ma wartościową
+semantykę, jest kopiowalny i przenosowalny jak zwykła wartość.
 
 ---
 
@@ -226,6 +271,17 @@ public:
 // Teraz Figura akceptuje DOWOLNY typ z pole() i rysuj() – bez dziedziczenia!
 ```
 
+**Wartościowa semantyka przez `Concept/Model` pattern.** Wzorzec ten (popularyzowany przez
+Sean Parent, znany też jako „value-based polymorphism") łączy polimorfizm runtime z
+wartościową semantyką. Obiekt `Figura` zachowuje się jak zwykła wartość: można go
+kopiować (`Figura f2 = f1`), wstawiać do `std::vector<Figura>` bez wskaźników. Klucz
+to metoda `clone()` w wewnętrznej hierarchii `Concept/Model` — deep copy jest
+enkapsulowany. Z zewnątrz `Figura` nie ma widocznych wskaźników, działa jak `int`.
+Koszt to wciąż pośrednie wywołanie (vtable wewnątrz), ale kopiowanie jest możliwe (czego
+`unique_ptr<IFigura>` nie oferuje). Opcjonalne rozszerzenie: użycie wewnętrznego SBO
+bufora eliminuje alokacje sterty dla małych typów — implementacja `std::any` używa
+dokładnie tej samej techniki.
+
 ---
 
 ## Slajd 7: Porównanie technik type erasure
@@ -237,6 +293,17 @@ public:
 | `std::any` | Dowolny | SBO/Heap | `any_cast` | Tak | Nie |
 | `std::variant` | Z listy | **Stack** | `std::visit` | Tak | **Tak** |
 | Własne TE | Nieograniczone | Heap/SBO | Indirect | Opcjonalnie | Nie |
+
+**Drzewo decyzyjne dla type erasure.** Wybór techniki zależy od trzech pytań:
+(1) **Czy znasz wszystkie typy z góry?** — jeśli tak, `std::variant` jest najlepszy:
+zero narzutu na stercie, wyczerpujące sprawdzanie przypadków. (2) **Czy potrzebujesz
+kopiowania wartości?** — `unique_ptr<IFigura>` nie jest kopiowalny; `std::any`,
+`std::function` i własne TE z `clone()` są. (3) **Czy ważna jest wydajność wywołania?** —
+`std::variant` z `std::visit` może być szybszy od vtable dispatch dzięki predyktorowi
+skoków. W systemach high-performance (gamedev, HFT) własne TE z SBO i lokalną pamięcią
+może być jedynym rozwiązaniem spełniającym wymagania. Jako zasada ogólna: preferuj
+`std::variant` gdy możesz, `std::function` dla callbacków, `virtual` gdy kod jest
+bardziej czytelny i wydajność nie jest krytyczna.
 
 ---
 

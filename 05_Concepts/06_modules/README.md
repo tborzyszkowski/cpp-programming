@@ -37,6 +37,17 @@ Przez 50 lat C++ korzystał z systemu nagłówków odziedziczonego z C. Niesie t
 #endif
 ```
 
+**Mechanizm `#include` — tekstowe wklejanie.** Preprocesor C/C++ działa na poziomie
+**tekstu** przed kompilacją — `#include <iostream>` dosłownie wkleja tysiące linii kodu
+do każdego pliku `.cpp`. W projekcie z 100 plikami `.cpp` każdy z `#include <vector>`
+zmusza kompilator do przetworzenia `<vector>` od nowa — 100 razy, każdorazowo budując
+AST i sprawdzając typy. Precompiled Headers (PCH) to obejście, nie rozwiązanie — jedno
+z kompilacji nagłówków jest zachowane i reużywane, ale tylko dla ustalonego zestawu
+nagłówków. Makra „wyciekają" ponieważ preprocesor jest globalny — `#define MAX 100`
+w dowolnym dołączonym pliku zmienia znaczenie symbolu `MAX` wszędzie od tego momentu.
+Moduły rozwiązują oba problemy: kompilują się **raz** do formatu binarnego (BMI)
+i makra nie przekraczają granic modułu.
+
 ---
 
 ## Slajd 2: Moduły – nowy model kompilacji (C++20)
@@ -76,6 +87,15 @@ int main() {
 }
 ```
 
+**Jak działa BMI (Binary Module Interface).** Gdy kompilator przetwarza plik `.cppm`,
+tworzy **BMI** — plik binarny zawierający przetworzone, zserializowane informacje o
+wyeksportowanym interfejsie modułu (typy, sygnatury funkcji, szablony). Gdy inny plik
+importuje moduł, kompilator odczytuje BMI **zamiast** parsować tekst nagłówka od nowa.
+BMI jest kompilatorospecyficzny (GCC tworzy `.gcm`, MSVC `.ifc`) i musi być skompilowany
+przed każdym importerem — stąd wymóg znania topologii zależności przez system budowania.
+Kluczowa różnica od PCH: BMI jest modułem o zdefiniowanym interfejsie publicznym —
+symbole nieeksportowane są **naprawdę ukryte**, a nie tylko schowane w przestrzeni nazw.
+
 ---
 
 ## Slajd 3: Partycje modułu
@@ -113,6 +133,15 @@ int main() {
 }
 ```
 
+**Partycje — wewnętrzna organizacja modułu.** Partycje modułu (`geometry:shapes`) są
+**wewnętrzne** — importujący kod widzi tylko `geometry`, nie może importować `geometry:shapes`
+bezpośrednio. To prawdziwa enkapsulacja: wewnętrzny podział implementacji jest ukryty
+przed użytkownikami biblioteki. W systemie nagłówkowym każdy header był dostępny globalnie;
+tu szczegóły organizacji modułu są prywatne. Partycje umożliwiają też podział pracy
+w zespołach: różni programiści pracują na różnych partycjach bez wycieków implementacji.
+Jednostka główna (`geometry.cppm`) re-eksportuje tylko to, co ma być publiczne —
+wewnętrzne partycje pomocnicze mogą pozostać niewidoczne.
+
 ---
 
 ## Slajd 4: `module :private` – podział interfejsu i implementacji
@@ -147,6 +176,15 @@ void funkcja_pub() {
 // (To jest niemożliwe z nagłówkami)
 ```
 
+**ABI stability przez `module :private`.** W klasycznym systemie nagłówkowym każda
+zmiana w pliku `.h` (nawet komentarza lub prywatnego pola klasy) powoduje recompile
+wszystkich `.cpp` z `#include`. Z `module :private` wszystko po tej dyrektywie jest
+częścią jednostki implementacji — zmiana implementacji metody **nie zmienia** BMI.
+Importerzy nie muszą być rekompilowani, bo ich widok modułu (BMI) pozostał identyczny.
+To zbliża C++ do modelu typowego dla skompilowanych bibliotek `.dll`/`.so`, ale na
+poziomie kodu źródłowego. W praktyce to dramatyczne przyspieszenie iteracji: programiści
+modyfikujący implementację nie „dotykają" API i nie wywołują lawinowej rekompilacji.
+
 ---
 
 ## Slajd 5: Porównanie – nagłówki vs moduły
@@ -165,6 +203,16 @@ void funkcja_pub() {
 **Wyniki benchmarków (Mozilla Firefox, LLVM):**
 - Czas kompilacji z modułami: **40-70% krótszy** niż z nagłówkami wstępnie kompilowanymi (PCH)
 - Czas przyrostowej kompilacji: **jeszcze lepszy** (zmiana implementacji ≠ recompile importerów)
+
+**Dlaczego moduły są szybsze — kompilacja raz, reużycie wiele razy.** System nagłówkowy
+wymaga przetworzenia każdego nagłówka w każdej jednostce translacji — kompilator parsuje
+tekst, buduje AST, sprawdza typy, a następnie wyrzuca wynik (pcja PCH ratuje cześć pracy).
+Z modułami: jeden plik `.cppm` kompiluje się raz do BMI. Każdy import tego modułu odczytuje
+gotowy BMI — kompilator dostaje przetworzone, gotowe do użycia informacje bez parsowania
+tekstu. Przyspieszenie jest tym większe, im więcej plików importuje ten sam moduł.
+Strategia migracji dla istniejących projektów: zacznij od stworzenia modułu wrappera
+wokół istniejących nagłówków (`#include "legacy.h"` wewnątrz modułu, export interfejsu)
+— pozwala na stopniowe przejście bez refaktoryzacji całej bazy kodu naraz.
 
 ---
 
@@ -193,6 +241,15 @@ export module mojlib;
 export void moja_funkcja();   // interfejs modułu
 ```
 
+**Strategia migracji kodu legacy.** Kopiowanie całej bazy kodu do `.cppm` na raz nie
+jest realistyczne. Zalecane podejście stopniowe: (1) nowe moduły używają `import std`
+lub `import <nagłówek>`; (2) istniejące biblioteki owijamy w moduł-wrapper: wewnątrz
+modułu `#include "stara_biblioteka.h"`, export wybranych symboli; (3) pliki `.cpp` mogą
+nadal używać `#include` — moduły i nagłówki koegzystują w jednym projekcie. Makra
+i `using namespace` z nagłówków wewnątrz modułu nie przeciekają do importerów —
+to kluczowa gwarancja. `import std` (C++23) jest szczególnie wartościowy: cała biblioteka
+standardowa jako jeden spójny moduł, kompilowany raz.
+
 ---
 
 ## Slajd 7: Build system i kompilacja modułów
@@ -220,3 +277,14 @@ target_compile_features(math PUBLIC cxx_std_20)
 **Uwaga:** Ze względu na różnice wsparcia kompilatorów, kod w `src/` używa
 symulacji modułów przez namespace i klasy – by działał na GCC 11+.
 Komentarze pokazują, jak wyglądałby kod z pełnymi modułami.
+
+**Wyzwanie dependency scanning.** Tradycyjny system budowania (make, CMake pre-3.28)
+zakładał, że zależności między plikami `.cpp` są z góry znane i można je obliczać
+niezależnie. Moduły wymuszają **skanowanie zależności** przed kompilacją: `math.cppm`
+musi być skompilowany przed `main.cpp`, który go importuje. System budowania musi
+zrozumieć kolejność: `import math` → skompiluj `math.cppm` najpierw. CMake 3.28 dodał
+oficjalne wsparcie przez `FILE_SET CXX_MODULES` — skanuje pliki źródłowe w poszukiwaniu
+deklaracji `export module` i `import`, buduje graf zależności i kompiluje w poprawnej
+kolejności. Ninja (zalecany backend) doskonale wspiera ten model budowania przyrostowego.
+Dla projektów multiplatformowych MSVC jest najdojrzalszą implementacją modułów; GCC i
+Clang nadrabiają zaległości w kolejnych wydaniach.

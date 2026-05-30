@@ -32,6 +32,14 @@ auto dodaj14(T a, U b) {   // kompilator dedukuje typ zwracany
 **Instancjacja szablonu:** Kompilator generuje osobny kod dla każdego kombinacji typów.
 Każda taka wersja to **instancja szablonu** (template instantiation).
 
+**Monomorfizacja vs. type erasure:** C++ stosuje strategię **monomorfizacji** — dla
+każdego użytego `T` kompilator generuje oddzielną, w pełni typowaną funkcję. To
+przeciwieństwo podejścia Javy/Go, gdzie generyki są implementowane przez **type erasure**
+— w binarce istnieje jedna funkcja operująca na `Object`/interfejsie, a kompilator wstawia
+rzutowania. Monomorfizacja pozwala na agresywną optymalizację (inlining, SIMD, eliminacja
+martwego kodu) kosztem większych binariów. Dlatego `std::sort<int>` i `std::sort<double>`
+to dwie różne funkcje w binarce, obie wyspecjalizowane dla swoich typów.
+
 ---
 
 ## Slajd 2: Szablony klas
@@ -61,6 +69,15 @@ TablicaStatyczna<std::string, 3> t3;
 std::pair p{1, 2.0};         // zamiast std::pair<int,double>
 std::vector v{1, 2, 3};      // zamiast std::vector<int>
 ```
+
+**CTAD i deduction guides:** CTAD (C++17) rozszerza dedukcję, która wcześniej działała
+tylko dla funkcji, na klasy. Kompilator korzysta z **przewodników dedukcji** (deduction
+guides) — mogą być automatycznie wygenerowane z konstruktorów lub zdefiniowane ręcznie.
+Przykładowo `std::vector v{1,2,3}` działa dzięki temu, że konstruktor `vector(initializer_list<T>)`
+pozwala wywnioskować `T = int`. Gdy automatyczna dedukcja jest niejednoznaczna, można
+napisać jawny przewodnik: `template<typename T> MyClass(T) -> MyClass<T>;`. CTAD znacznie
+zmniejsza ilość szablonowego kodu i sprawia, że API klasy generycznej wygląda jak API
+zwykłej klasy.
 
 ---
 
@@ -99,6 +116,14 @@ Bufor<1024> duzy;
 Bufor<64>   maly;
 // Kompilator generuje dwie różne klasy – żadnych alokacji sterty!
 ```
+
+**NTTP i zero-heap gwarancja:** Non-Type Template Parameters (NTTP) umożliwiają wbudowanie
+stałych w typ, nie tylko w wartość. `Bufor<1024>` i `Bufor<64>` to w systemie typów dwa
+**różne typy** — kompilator nie pozwoli ich pomylić. Co ważniejsze, `char dane_[N]` w
+klasie to tablica na stosie o rozmiarze **określonym w czasie kompilacji**: brak `new`,
+brak alokacji sterty, brak wskaźnika. `std::array<int, N>` używa dokładnie tej techniki.
+To wzorzec często spotykany w systemach embedded i real-time, gdzie dynamiczna alokacja
+jest zabroniona. NTTP w C++20 rozszerzono o typy float i klasy (wcześniej tylko całkowite).
 
 ---
 
@@ -140,6 +165,15 @@ Drukuj<bool>::drukuj(true);                 // => true  (specjalizacja)
 Drukuj<std::vector<int>>::drukuj({1,2,3});  // => [1, 2, 3]
 ```
 
+**Reguły wyboru specjalizacji:** Kompilator zawsze preferuje **najbardziej szczegółowe**
+dopasowanie. Pełna specjalizacja (`template<> struct Drukuj<bool>`) wygrywa nad częściową
+(`template<typename T> struct Drukuj<vector<T>>`), która wygrywa nad szablonem ogólnym.
+Jeśli dwie częściowe specjalizacje są równie szczegółowe, kompilator zgłasza błąd
+niejednoznaczności. Ważne ograniczenie: **funkcje** można specjalizować tylko w pełni,
+nie częściowo — do tego używa się przeciążeń lub `if constexpr`. Specjalizacja klas
+jest potężna, ale łatwo popełnić błąd zakładając, że pusta specjalizacja dziedziczy
+jakiekolwiek składowe z szablonu ogólnego — nie dziedziczy niczego.
+
 ---
 
 ## Slajd 5: SFINAE – Substitution Failure Is Not An Error
@@ -180,6 +214,16 @@ void przetworz(T x) {
 }
 ```
 
+**Dlaczego SFINAE działa — kontekst podstawiania.** Kluczem jest to, że kompilator
+sprawdza sygnaturę funkcji (typy argumentów i zwracany) **w odizolowanym kontekście**:
+niepowodzenie w obliczeniu typów sygnatury nie jest błędem, tylko informacją „usuń tę
+wersję z kandydatów". Natomiast błąd wewnątrz **ciała funkcji** to już twarda pomyłka.
+`std::void_t` to genialny trick: przyjmuje listę typów i zawsze zwraca `void` — jeśli
+jednak obliczenie któregoś typu się nie powiedzie (np. `declval<T>().dodaj(0)` gdy
+metoda nie istnieje), cała specjalizacja jest odrzucana. `if constexpr` zastępuje SFINAE
+w prostych przypadkach i jest zdecydowanie czytelniejsze, ale nie działa przy przeciążaniu
+funkcji — tam nadal potrzebny jest SFINAE lub Concepts.
+
 ---
 
 ## Slajd 6: Variadic templates i fold expressions
@@ -218,6 +262,16 @@ auto wywolaj(F&& f, Args&&... args) {
 }
 ```
 
+**Mechanizm rozwinięcia paczki.** `Ts... args` to lista parametrów o zmiennej długości —
+kompilator **rekurencyjnie** instancjuje szablon lub (od C++17) używa fold expression.
+Wyrażenie `(std::cout << ... << args)` kompilator ekspanduje do
+`((std::cout << a1) << a2) << a3`, tworząc lewostronny łańcuch. Fold expressions są nie
+tylko czytelniejsze, ale mogą też być szybsze do skompilowania niż rekurencja szablonów.
+`sizeof...(args)` to specjalny operator działający w czasie kompilacji, zwracający liczbę
+elementów w paczce — przydatny do `static_assert`. Perfect forwarding z variadic templates
+(`Args&&...` + `std::forward<Args>(args)...`) to idiom niezbędny wszędzie tam, gdzie
+piszemy generyczne wrappery funkcji.
+
 ---
 
 ## Slajd 7: Type traits – metaprogramowanie typami
@@ -254,6 +308,16 @@ auto kopiuj(T&& x) {
     return kopia;
 }
 ```
+
+**Type traits to metaprogramowanie w czasie kompilacji.** `std::is_integral_v<T>` to
+stała `constexpr bool` obliczana przez kompilator — nie ma żadnego kodu w czasie
+wykonania. `std::conditional_t<B, T, U>` to typ: jeśli `B == true`, wynikiem jest `T`,
+w przeciwnym razie `U`. To **obliczenia na typach**, analogiczne do funkcji `if–else`
+ale działające w systemie typów. Biblioteka `<type_traits>` implementuje te mechanizmy
+przez specjalizacje szablonów — np. `is_integral<int>` ma specjalizację dziedziczącą z
+`true_type`, a `is_integral<std::string>` używa szablonu ogólnego dziedziczącego z
+`false_type`. To fundament Concepts: każdy `concept` to ostatecznie `bool constexpr`
+obliczany przez wyrażenia `requires` i type traits.
 
 ---
 
@@ -292,3 +356,12 @@ template<typename T>
     requires std::is_arithmetic_v<T>
 T kwadrat(T x) { return x * x; }
 ```
+
+**`decltype` i `declval` — dlaczego są konieczne.** `decltype(expr)` zwraca typ wyrażenia
+bez jego obliczania — klucz: `decltype(std::declval<T>().metoda())` pozwala zapytać
+„jaki byłby typ wyniku wywołania `metoda()` na obiekcie T?" **bez potrzeby posiadania
+obiektu T**. To niezbędne gdy T nie ma konstruktora domyślnego — nie możemy napisać
+`T obj; decltype(obj.metoda())`. `std::declval<T>()` to funkcja nigdy nieimplementowana
+(tylko deklarowana `extern`) — używa się jej wyłącznie w kontekście `decltype`, który
+nie oblicza wyrażenia. `decltype(auto)` łączy oba: dedukcja jak `auto`, ale zachowuje
+referencje i kwalifikatory `const` — niezbędne przy pisaniu przezroczystych wrapperów.

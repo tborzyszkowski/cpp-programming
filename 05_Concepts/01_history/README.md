@@ -23,6 +23,15 @@ int z = MAX(i++, j++);      /* BŁĄD: i i j inkrementowane DWUKROTNIE! */
 - Brak zasięgu — makra są globalne, łatwo o kolizje nazw
 - Efekty uboczne przy wielokrotnej ewaluacji argumentów
 
+**Dlaczego makra są tak niebezpieczne?** Preprocesor to prosty mechanizm podstawiania
+tekstu — wykonuje się **przed** kompilatorem, bez żadnej wiedzy o typach czy semantyce
+C++. `MAX(i++, j++)` rozwinnie się do `((i++) > (j++) ? (i++) : (j++))` — `i` lub `j`
+zostanie zinkrementowane dwukrotnie, co jest **niezdefiniowanym zachowaniem**. Kompilator
+widzi ten kod dopiero po podstawieniu — nie ma szans ostrzec o podwójnej inkrementacji.
+To fundamentalna różnica: szablon `max<T>` jest *funkcją* — argumenty są obliczane raz,
+przekazane przez wartość lub referencję. Bezpieczeństwo typów i jednokrotna ewaluacja są
+gwarantowane przez reguły języka, a nie przez ostrożność programisty.
+
 ---
 
 ## Slajd 2: `void*` jako ersatz generyczności
@@ -65,6 +74,15 @@ public:
 /* Explosion: IntStack, DoubleStack, StringStack... */
 ```
 
+**Koszt duplikacji kodu:** Technika `void*` przenosi problem z czasu kompilacji do czasu
+wykonania. Każde rzutowanie `(int*)stack_pop(&s)` to zakład: programista obiecuje
+kompilatorowi, że wie, co tam jest. Gdy pomyli typy — nie ma błędu kompilacji, jest
+**cicha korupcja danych** lub crash. Biblioteka C (qsort, bsearch) pokazuje skutki:
+`qsort` przyjmuje `void*` i wskaźnik na komparator — nie ma gwarancji, że komparator
+pasuje do typów danych. W C++ ta technika jest uznana za antywzorzec; szablony rozwiązują
+problem *bez żadnego narzutu runtime*, bo duplikacja odbywa się w czasie kompilacji
+(każda instancja szablonu jest osobną, optymalnie skompilowaną funkcją).
+
 ---
 
 ## Slajd 3: Inspiracje – Ada, ML i programowanie generyczne
@@ -92,6 +110,14 @@ end Stack;                     T    pop();
 
 Kluczowy wkład **Aleksandra Stepanova**: udowodnienie, że algorytmy generyczne
 mogą być *tak samo szybkie* jak specjalizowane — co obaliło powszechne przekonanie.
+
+**Rola Stepanova jest kluczowa:** Przed STL (C++98) panowało przekonanie, że generyczny
+kod musi być wolniejszy od specjalizowanego. Stepanov w pracy w Bell Labs i Hewlett-Packard
+(1986–1994) empirycznie udowodnił tezę odwrotną: szablony C++ pozwalają na pełną
+monomorfizację — kompilator generuje kod tak dobry jak ręcznie napisany dla każdego typu.
+Jego implementacja `std::sort` jest szybsza od qsort z C o 15–50%, bo qsort używa
+wskaźnika na funkcję (pośrednie wywołanie), a `std::sort` z szablonem komparatora
+może zinlinować porównanie całkowicie. To był przełom filozoficzny: abstrakcja bez kosztu.
 
 ---
 
@@ -124,6 +150,14 @@ Stos<double>      sd;
 ```
 
 **Rewolucja:** Jeden kod → wiele instancji → pełna optymalizacja dla każdego typu.
+
+**Mechanizm instancjacji:** Gdy kompilator napotka `Stos<int>`, generuje osobną klasę
+identyczną z ręcznie napisaną `class IntStack` — z dokładnie takimi samymi polami i
+metodami, tylko z `int` zamiast `T`. Ten proces to **instancjacja szablonu** i odbywa się
+wyłącznie w czasie kompilacji. W wynikowej binarce nie ma żadnego śladu szablonu jako
+takiego — jest tylko konkretna klasa dla każdego użytego `T`. Stąd nazwa „Zero-overhead
+abstractions": generyczny kod jest równie szybki jak specjalizowany, bo po kompilacji
+jest tym samym kodem. Koszt to czas kompilacji i rozmiar binarki przy wielu instancjach.
 
 ---
 
@@ -160,6 +194,15 @@ dodaj(T a, T b) { return a + b; }
 // Dla std::string – nie istnieje (SFINAE, nie błąd)
 ```
 
+**Jak działa SFINAE?** Gdy kompilator próbuje podstawić `T = std::string` do szablonu
+z `std::enable_if<std::is_arithmetic<T>::value, T>::type`, wyrażenie to jest **niepoprawne**
+(bo `is_arithmetic<string>::value` jest `false`). Zamiast błędu kompilacji, kompilator
+po prostu **pomija** tę przeciążoną wersję i szuka dalej. Jeśli nie znajdzie żadnego
+pasującego przeciążenia — wtedy dopiero błąd. Zasada: niepowodzenie przy podstawianiu
+do sygnatury to nie błąd — `Substitution Failure Is Not An Error`. SFINAE jest potężne,
+ale składnia `enable_if` jest czytelna tylko dla zaawansowanych. C++20 Concepts zastąpiły
+tę technikę czytelną składnią `requires`, zachowując ten sam model semantyczny.
+
 ---
 
 ## Slajd 6: Ewolucja szablonów – C++11 do C++20
@@ -180,6 +223,13 @@ Makra (C)  →  void* (C)  →  Templates C++98  →  SFINAE C++11  →  Concept
 Brak typów    Brak typów     Niskie błędy       Czytelniejsze     Jasne kontrakty
               Niebezpieczne  Niejawny kontrakt  ale nadal złożone  Piękne błędy
 ```
+
+**Ewolucja jest gradientem bezpieczeństwa i czytelności.** Każdy krok poprawiał albo
+bezpieczeństwo (makra → szablony), albo czytelność błędów (szablony → SFINAE → Concepts).
+Żaden krok nie popsuł wydajności — każde podejście generuje ten sam kod maszynowy dla
+happy path. Kluczowy insight: problemem szablonów pre-C++20 nie była wydajność, lecz
+**komunikacja**: błąd w szablonie ujawniał się 3 poziomy głębiej niż miejsce użycia,
+z komunikatem opisującym szczegóły implementacji zamiast naruszenia kontraktu.
 
 ---
 
@@ -207,3 +257,13 @@ template<std::totally_ordered T>
 T max(T a, T b) { return a > b ? a : b; }
 // Kompilator WYMUSI te wymagania, nie tylko dokumentacja!
 ```
+
+**Kontrakt formalny vs. dokumentacyjny — krytyczna różnica.** Komentarz napisany przez
+programistę jest czytany przez człowieka, ale ignorowany przez kompilator. Jeśli ktoś
+wywoła pre-C++20 `max<MyType>` dla typu bez `operator<`, błąd pojawi się w **środku
+implementacji** `max`, kilka linii od `a > b`. W C++20 z `std::totally_ordered` błąd
+pojawia się w **miejscu wywołania**: „typ MyType nie spełnia wymagania totally_ordered".
+To zasadnicza zmiana: naruszenie kontraktu jest wykrywalne przez narzędzia (IDE,
+kompilator) a nie tylko przez przeczytanie dokumentacji. Concepts są formalizacją tego,
+co przez 20 lat było konwencją — szablony STL zawsze miały wymagania, ale zakodowane
+tylko w komentarzach i niejasnych błędach kompilacji.
