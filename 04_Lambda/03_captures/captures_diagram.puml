@@ -1,0 +1,59 @@
+@startuml captures_diagram
+
+skinparam backgroundColor #FAFAFA
+skinparam shadowing false
+skinparam rectangle {
+    BackgroundColor #EEF2FF
+    BorderColor #4A5AE0
+}
+skinparam note {
+    BackgroundColor #FFFDE7
+    BorderColor #FBC02D
+}
+skinparam arrow {
+    Color #4A5AE0
+}
+
+title Tryby Przechwycenia w Lambdach C++
+
+rectangle "Zakres zewnętrzny\n(enclosing scope)" as outer #D1FAE5 {
+    rectangle "int a = 10" as va
+    rectangle "int b = 20" as vb
+    rectangle "MyClass obj" as vo
+}
+
+rectangle "Obiekt domknięcia\n(closure object)" as closure #DBEAFE {
+    rectangle "[a]  kopia a" as ca #FEF3C7
+    rectangle "[&b]  ref do b" as rb #FEF3C7
+    rectangle "[*this]  kopia obj (C++17)" as co #FEF3C7
+}
+
+va -right-> ca : kopiuje\nw chwili\ntworzenia
+vb -right-> rb : przechowuje\nreferencję
+vo -right-> co : kopiuje\ncały obiekt
+
+note top of closure
+  [a]       → kopia a
+  [&b]      → referencja do b
+  [=]       → kopia wszystkich używanych
+  [&]       → ref do wszystkich używanych
+  [=, &b]   → wszystko kopia, b ref
+  [a=expr]  → nowa zmienna (C++14)
+  [this]    → wskaźnik na obiekt
+  [*this]   → kopia obiektu (C++17)
+end note
+
+note bottom of ca
+  BEZPIECZNE:
+  lambda przeżyje
+  zewnętrzny scope
+end note
+
+note bottom of rb
+  RYZYKO:
+  wisząca referencja
+  gdy b zostanie zniszczone
+  przed wywołaniem lambdy
+end note
+
+@enduml

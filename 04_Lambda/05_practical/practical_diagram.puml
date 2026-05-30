@@ -1,0 +1,40 @@
+@startuml practical_diagram
+
+skinparam backgroundColor #FAFAFA
+skinparam shadowing false
+skinparam rectangle {
+    BackgroundColor #EEF2FF
+    BorderColor #4A5AE0
+}
+skinparam usecase {
+    BackgroundColor #D1FAE5
+    BorderColor #059669
+}
+skinparam note {
+    BackgroundColor #FFFDE7
+    BorderColor #FBC02D
+}
+
+title Zastosowania Lambd C++ w Praktyce
+
+rectangle "Lambda\nexpr." as lambda #DBEAFE
+
+usecase "STL\nAlgorytmy" as stl
+usecase "Callbacki\ni zdarzenia" as cb
+usecase "Programowanie\nasynchroniczne" as async
+usecase "Wzorzec\nStrategy" as strategy
+usecase "Testy\njednostkowe" as tests
+usecase "Analiza\ndanych" as data
+usecase "IIFE\ninicjalizacja" as iife
+usecase "Geometria\nTransformacje" as geo
+
+lambda --> stl      : predykaty\nkomparatory\ntransformacje
+lambda --> cb       : on_click\non_data\non_error
+lambda --> async    : std::async\nstd::thread\nfuture
+lambda --> strategy : brak klas\nabstrakcyjnych
+lambda --> tests    : czytelny DSL\nanonimowe asercje
+lambda --> data     : pipeline\nfiltrowanie\nagreacja
+lambda --> iife     : inicjalizacja\nconst z\nkompleksową\nlogiką
+lambda --> geo      : transformacje\ngeometryczne\nkompozycja
+
+@enduml

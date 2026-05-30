@@ -1,0 +1,60 @@
+@startuml history_diagram
+
+skinparam backgroundColor #FAFAFA
+skinparam shadowing false
+skinparam rectangle {
+    BackgroundColor #EEF2FF
+    BorderColor #4A5AE0
+}
+skinparam note {
+    BackgroundColor #FFFDE7
+    BorderColor #FBC02D
+}
+skinparam arrow {
+    Color #4A5AE0
+}
+
+title Ewolucja Callables w C++
+
+rectangle "Wskaźniki\nna funkcje\n(C / C++98)" as ptr #D1FAE5
+rectangle "Funktory\n(C++98)" as functor #DBEAFE
+rectangle "std::bind\nBoost.Bind\n(C++03/Boost)" as bind #FEF3C7
+rectangle "Lambdy\n(C++11)" as lambda11 #EDE9FE
+rectangle "Lambdy\ngeneryczne\n(C++14)" as lambda14 #FCE7F3
+rectangle "constexpr\nlambda\n(C++17)" as lambda17 #FEE2E2
+rectangle "Lambdy\nszablonowe\n(C++20)" as lambda20 #D1FAE5
+rectangle "Dedukcja this\n(C++23)" as lambda23 #DBEAFE
+
+ptr -right-> functor : dodano stan
+functor -right-> bind : ograniczone\nkomponowanie
+bind -right-> lambda11 : elegancja\ni inline
+lambda11 -down-> lambda14
+lambda14 -right-> lambda17
+lambda17 -right-> lambda20
+lambda20 -right-> lambda23
+
+note bottom of ptr
+  Brak stanu
+  Brak inline przez pointer
+  Typ: int (*)(int)
+end note
+
+note bottom of functor
+  Stan w polach klasy
+  Pełne inline'owanie
+  Odległa definicja
+end note
+
+note bottom of lambda11
+  Definicja w miejscu użycia
+  Jawne przechwycenie
+  Unikalny anonimowy typ
+end note
+
+note bottom of lambda20
+  []<typename T>(T x){}
+  Lambdy w template args
+  [=, this] fix
+end note
+
+@enduml

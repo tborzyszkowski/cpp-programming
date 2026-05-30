@@ -1,0 +1,57 @@
+@startuml advanced_diagram
+
+skinparam backgroundColor #FAFAFA
+skinparam shadowing false
+skinparam rectangle {
+    BackgroundColor #EEF2FF
+    BorderColor #4A5AE0
+}
+skinparam note {
+    BackgroundColor #FFFDE7
+    BorderColor #FBC02D
+}
+
+title Zaawansowane Cechy Lambd C++
+
+rectangle "C++11\nPodstawowa lambda" as c11 #D1FAE5
+rectangle "C++14\nLambdy generyczne" as c14 #DBEAFE
+rectangle "C++17\nconstexpr, *this" as c17 #EDE9FE
+rectangle "C++20\nLambdy szablonowe\nNTTP" as c20 #FEE2E2
+rectangle "C++23\nDedukcja this\n(explicit self)" as c23 #FEF3C7
+
+c11 -right-> c14
+c14 -right-> c17
+c17 -right-> c20
+c20 -right-> c23
+
+note bottom of c11
+  [](int x){ return x; }
+  mutable
+  przechwycenie
+end note
+
+note bottom of c14
+  [](auto x){ return x; }
+  [var = expr]
+  move capture
+end note
+
+note bottom of c17
+  constexpr auto f = [](...){};
+  static_assert(f(5) == 10);
+  [*this]
+end note
+
+note bottom of c20
+  []<typename T>(T x){}
+  []<std::integral T>(){}
+  constexpr jako NTTP
+end note
+
+note bottom of c23
+  [](this auto self, int n)
+  { return self(n-1); }
+  Rekurencja bez std::function
+end note
+
+@enduml

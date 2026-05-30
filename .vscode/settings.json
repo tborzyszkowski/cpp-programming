@@ -61,5 +61,5 @@
     "Get-Command": true,
     "java": true
   },
-    "workbench.colorTheme": "Light 2026"
+  "workbench.colorTheme": "Light 2026"
 }

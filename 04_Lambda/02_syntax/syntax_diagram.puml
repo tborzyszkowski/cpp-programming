@@ -1,0 +1,68 @@
+@startuml syntax_diagram
+
+skinparam backgroundColor #FAFAFA
+skinparam shadowing false
+skinparam class {
+    BackgroundColor #EEF2FF
+    BorderColor #4A5AE0
+    ArrowColor #4A5AE0
+}
+skinparam note {
+    BackgroundColor #FFFDE7
+    BorderColor #FBC02D
+}
+
+title Anatomia Wyrażenia Lambda w C++
+
+class "Wyrażenie Lambda" as lambda {
+    [ przechwycenie ]
+    ( parametry )
+    specyfikatory
+    -> typ_zwracany
+    { ciało }
+}
+
+class "Typ domknięcia\n(closure type)" as closure {
+    -- pola (przechwycone zmienne) --
+    + operator()(parametry) const
+    -- opcjonalnie --
+    + operator FuncPtr() const
+}
+
+class "Obiekt domknięcia\n(closure object)" as obj {
+    -- instancja typu domknięcia --
+    przechowuje kopie/referencje\ndo przechwyconych zmiennych
+}
+
+class "std::function<R(Args...)>" as sf {
+    -- type erasure --
+    + operator()(Args...) : R
+    -- overhead: alokacja, virtual call --
+}
+
+class "Wskaźnik na funkcję\nR(*)(Args...)" as fp {
+    -- tylko bezstanowe lambdy --
+    + niejawna konwersja
+}
+
+lambda ..> closure : kompilator generuje
+closure ..> obj : auto f = lambda
+obj --> sf : niejawna konwersja\n(z kosztem)
+obj --> fp : konwersja\n(tylko bez przechwycenia)
+
+note right of closure
+  Typ jest:
+  - unikalny dla każdej lambdy
+  - anonimowy (nie można go nazwać)
+  - final (nie można dziedziczyć)
+  - literalny (gdy constexpr)
+end note
+
+note right of sf
+  Zalety: uniform type, storable
+  Wady: virtual dispatch,
+  potencjalna alokacja na stercie,
+  niemożliwy inline przez kompilator
+end note
+
+@enduml
