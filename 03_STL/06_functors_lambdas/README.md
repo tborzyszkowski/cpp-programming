@@ -30,6 +30,16 @@ std::count_if(v.begin(), v.end(), WiekszyNiz{7});    // próg = 7
 Funktor jest **parametryzowany przez konstruktor** — to jego kluczowa przewaga
 nad zwykłą funkcją.
 
+**Funktor vs wskaźnik na funkcję — kwestia inline.** Gdy przekazujesz zwykłą funkcję
+jako argument szablonu, kompilator widzi **wskaźnik na funkcję** — wywołanie przez
+wskaźnik to pośrednie skoku, którego kompilator często nie może zinlineować. Funktor
+to typ konkretny: kompilator wie dokładnie, który `operator()` wywołać, i może go
+**zinlineować** — produkując kod identyczny z ręcznie napisaną pętlą. To dlatego
+Stepanov twierdził, że generyczne algorytmy mogą być równie szybkie jak specjalizowane:
+`std::sort` z funktorem komparatora kompiluje się do kodu jakbyś wpisał komparator
+bezpośrednio w pętlę sortowania. Właśnie z tego powodu algorytmy STL są szablonami
+a nie polimorfizmem wirtualnym — szablony umożliwiają inline w czasie kompilacji.
+
 ---
 
 ## Slajd 2: Standardowe funktory w `<functional>`
@@ -59,6 +69,16 @@ std::logical_not<bool>{}(true)          // false
 std::sort(v.begin(), v.end(), std::greater<int>{});   // malejąco
 std::accumulate(v.begin(), v.end(), 1, std::multiplies<int>{}); // iloczyn
 ```
+
+**Przezroczyste funktory `std::less<>` (C++14) i heterogeniczne wyszukiwanie.**
+`std::less<int>{}` porównuje dwa `int`. `std::less<>{}` (bez argumentu szablonu) to
+**przezroczysty funktor** — akceptuje dowolne typy, które można porównać przez `<`.
+Dla kontenerów (`std::map`, `std::set`) z komparatorem `std::less<>` można wywołać
+`find(string_view)` bez tworzenia tymczasowego `std::string` — **heterogeniczne
+wyszukiwanie**. Przykład: `std::set<std::string, std::less<>>` + `s.find("literal")`
+nie konstruuje `std::string` z literału — wyszukuje bezpośrednio. Dla dużych zbiorów
+z częstym wyszukiwaniem przez string literal to eliminuje alokacje. Domyślny
+`std::less<std::string>` nie ma tej właściwości — wymaga pełnego `std::string`.
 
 ---
 
@@ -92,6 +112,16 @@ auto wszystko_val = [=](int x) { return x + prog; };  // kopia prog
 auto wszystko_ref = [&](int x) { return x + prog; };  // ref do prog
 ```
 
+**Przechwycenie przez referencję — ryzyko wiszących referencji.** Przechwycenie `[&]`
+lub `[&zmienna]` przechowuje **referencję** do zmiennej ze stosu. Jeśli lambda żyje
+dłużej niż zmienna (np. jest przechowywana w `std::function`, przekazana do wątku,
+zapisana w callbacku), referencja staje się **wiszącą** — dostęp to UB. Typowe
+niebezpieczne wzorce: zwracanie lambdy przechwytującej `[&]` lokalne zmienne,
+przekazywanie `[&]` lambdy do `std::async` lub `std::thread`, zapisywanie `[&]` lambdy
+w wektorze który przeżywa zakres. Bezpieczna reguła: dla lambd wychodzących poza bieżący
+zakres używaj `[=]` (kopia) zamiast `[&]`. Dla lambd używanych tylko lokalnie `[&]`
+jest bezpieczne i bardziej efektywne (bez kopiowania).
+
 ---
 
 ## Slajd 4: Lambda generyczna i `constexpr`
@@ -123,6 +153,16 @@ std::function<int(int)> silnia = [&silnia](int n) -> int {
     return n <= 1 ? 1 : n * silnia(n - 1);
 };
 ```
+
+**Dlaczego przechwycone przez `[=]` zmienne są `const` domyślnie?** Lambda przez wartość
+`[x]` tworzy kopię `x` jako **pole const** w anonimowej strukturze — nie możesz jej
+modyfikować (stąd `mutable`). To celowy projekt: lambda domyślnie nie powinna mieć
+**efektów ubocznych** na przechwyconych kopiach, co ułatwia wnioskowanie o kodzie.
+`mutable` odblokowuje modyfikację kopii, ale original **nadal jest niezmieniony** —
+to odróżnia `mutable` lambda od `[&]`. Rekurencyjna lambda przez `std::function` ma
+koszt type erasure (patrz slajd 5) — w C++23 możesz użyć **dedukcji `this`**:
+`[](this auto& self, int n) -> int { return n <= 1 ? 1 : n * self(n-1); }` eliminując
+`std::function` i zachowując inline.
 
 ---
 
@@ -157,6 +197,16 @@ for (auto& f : transformacje)
 > **Koszt:** `std::function` używa **type erasure** — wiąże się z alokacją na stercie
 > i wirtualnym wywołaniem. Dla hot path preferuj szablony lub lambdy bezpośrednio.
 
+**`std::function` — type erasure i SBO.** Type erasure to technika pozwalająca
+przechowywać obiekty różnych typów przez wspólny interfejs bez wirtualnej dziedziczenia.
+`std::function` trzyma callable w buforze wewnętrznym (SBO — **Small Buffer Optimization**
+— zazwyczaj ~16-32 bajty). Jeśli callable mieści się w buforze — zero alokacji; jeśli
+jest większy (duże przechwycenie) — alokacja na stercie. Wywołanie `operator()` to
+pośrednie wywołanie przez wskaźnik na tablicę wirtualną — niemożliwe do zinlineowania.
+Dlatego `std::function` w hot-path jest od 3x do 10x wolniejsze od bezpośredniego
+wywołania lambdy. Alternatywy: `template <typename F> void algo(F&& f)` zachowuje typ
+i umożliwia inline; `std::move_only_function` (C++23) dla callables bez copy constructor.
+
 ---
 
 ## Slajd 6: `std::bind` i dlaczego lambdy go wyparły
@@ -184,6 +234,16 @@ std::cout << metoda(42);  // 142
 // Lambda jest prostsza:
 auto metoda_lambda = [&k](int x){ return k.oblicz(x); };
 ```
+
+**`std::bind` — dlaczego lambdy go wyparły.** `std::bind` był odpowiedzią C++11 na
+brak lambd w C++03 — pozwalał tworzyć częściowo zastosowane funkcje. Problem: składnia
+z `std::placeholders::_1`, `_2` staje się nieprzejrzysta przy wielu argumentach lub
+reorderingu. Lambda wyraża to samo w naturalnej składni C++. Co gorsza, `std::bind`
+ma subtelne pułapki: domyślnie **kopiuje** argumenty, nawet `reference_wrapper`
+wymaga jawnego `std::ref()`. Lambda `[&k](int x){ return k.oblicz(x); }` jest
+jednoznaczna w kwestii przechwycenia. Jedyne uzasadnione zastosowanie `std::bind` dziś:
+wiązanie metody wirtualnej do `std::function` w istniejącym kodzie korzystającym ze
+starszego API. W nowym kodzie — zawsze lambda.
 
 ---
 

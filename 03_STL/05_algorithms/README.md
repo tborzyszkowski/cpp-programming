@@ -17,6 +17,16 @@ Nagłówki:
 - `<numeric>` — `accumulate`, `reduce`, `partial_sum`, `iota`
 - `<ranges>` — C++20 Ranges
 
+**Separacja algorytmu od kontenera — klucz do rozszerzalności.** Algorytm STL „nie
+wie nic o kontenerze" — to nie metafora, to dosłowna prawda: żaden algorytm nie
+importuje nagłówka kontenera. To oznacza, że algorytmy działają na **każdym** typie
+dostarczającym odpowiedni iterator. Własna klasa z `begin()`/`end()` zwracającymi
+iteratory random access — `std::sort` zadziała z nią bez modyfikacji. Nowy algorytm
+napisany dziś działa ze wszystkimi kontenerami istniejącymi w STL i vice versa.
+Stanowi to kontrast z podejściem obiektowym (metody jako część klasy) — tam dodanie
+nowego algorytmu wymagałoby modyfikacji każdej klasy kontenera. W STL: O(K×N) kodu
+(K algorytmów × N typów iteratorów) = O(K) + O(N) dzięki szablonowemu pośrednikowi.
+
 ---
 
 ## Slajd 2: Algorytmy niemodyfikujące
@@ -48,6 +58,16 @@ bool ktorykolwiek = std::any_of(v.begin(), v.end(),
 auto [lo, hi] = std::minmax_element(v.begin(), v.end());
 std::cout << "min=" << *lo << " max=" << *hi << "\n";  // 1 9
 ```
+
+**`all_of`, `any_of`, `none_of` — krótkie spięcie jako wartość dodana.** `any_of`
+zatrzymuje się przy **pierwszym** elemencie spełniającym predykat — nie skanuje całego
+zakresu. `all_of` zatrzymuje się przy pierwszym **niespełnieniu**. Dla dużych kolekcji
+to istotna optymalizacja — sprawdzenie czy choćby jeden z miliona elementów jest ujemny
+kończy się przy pierwszym trafieniu. `std::find_if` analogicznie zwraca iterator na
+pierwszy pasujący element, a `std::count_if` musi przejść cały zakres (zlicza wszystkie).
+Dlatego `any_of` jest zwykle preferowane nad `count_if(...) > 0` — to samo semantycznie,
+ale potencjalnie wielokrotnie szybsze. Algorytmy niemodyfikujące są **bezpieczne do
+równoległości** z `std::execution::par`, bo nie zmieniają danych.
 
 ---
 
@@ -82,6 +102,16 @@ std::copy_if(v.begin(), v.end(),
     [](int x){ return x > 0; });              // kopiuj dodatnie
 ```
 
+**`back_inserter` i `transform` — bez przepełnienia bufora.** `std::transform(src.begin(),
+src.end(), dst.begin(), ...)` wymaga by `dst` miał **co najmniej** tyle elementów co
+`src` — zapis poza granicę to UB. `std::back_inserter(out)` tworzy iterator wyjściowy,
+który przy każdym przypisaniu wywołuje `out.push_back()` — wynikowy kontener rośnie
+automatycznie. To bezpieczny wzorzec do kopiowania z transformacją do niezainicjowanego
+wektora. Transformacja in-place (`std::transform(v.begin(), v.end(), v.begin(), f)`) jest
+bezpieczna tylko gdy zakres wejściowy i wyjściowy to ten sam zakres — `f` nie może
+czytać elementów „z przyszłości" (zazwyczaj OK dla punkt-po-punkcie). `std::iota`
+wypełnia sekwencją arytmetyczną — znacznie czytelniej niż ręczna pętla.
+
 ---
 
 ## Slajd 4: Sortowanie
@@ -108,6 +138,16 @@ std::nth_element(v.begin(), v.begin() + 2, v.end());
 // Sprawdzenie czy posortowane
 bool ok = std::is_sorted(v.begin(), v.end());
 ```
+
+**Kiedy `stable_sort` a kiedy `sort`?** `std::sort` jest najszybsze — typowo
+introsort (hybryd quicksort/heapsort/insertionsort), O(n log n), nie stabilny.
+`std::stable_sort` jest stabilne (równe elementy zachowują wzajemną kolejność) i
+typowo merge sort lub timsort — wymaga dodatkowej pamięci O(n) i jest ~2x wolniejsze.
+Stabilność ma znaczenie przy **wielokluczowym sortowaniu**: posortuj po nazwisku,
+potem stabilnie po imieniu → rekordy z tym samym imieniem zachowają kolejność po
+nazwisku. `partial_sort` jest O(n log k) — znacznie szybszy niż pełny sort gdy
+interesuje nas tylko top-k. `nth_element` to O(n) — jeśli potrzebujesz tylko
+mediany lub n-tego percentyla, jest wielokrotnie szybszy niż sortowanie całości.
 
 ---
 
@@ -136,6 +176,16 @@ std::vector<int> a = {1, 3, 5}, b = {2, 4, 6}, c;
 std::merge(a.begin(), a.end(), b.begin(), b.end(),
            std::back_inserter(c));  // c = {1,2,3,4,5,6}
 ```
+
+**`lower_bound` jest zazwyczaj bardziej użyteczny niż `binary_search`.** `binary_search`
+zwraca tylko `bool` — wiesz że element istnieje, ale nie masz iteratora. `lower_bound`
+zwraca iterator na **pierwszą pozycję ≥ k** — z tego możesz wywnioskować czy element
+istnieje (`*it == k`), ale też gdzie go wstawić by zachować porządek (to właśnie robi
+`std::lower_bound` wewnętrznie jako podstawa `map::insert`). `upper_bound(k)` minus
+`lower_bound(k)` to liczba wystąpień k — użyteczne dla multiset/multimap. Ważny wymóg:
+zakres **musi być posortowany** względem tego samego komparatora — użycie na
+nieposortowanym zakresie to niezdefiniowane zachowanie. `is_sorted()` przed wywołaniem
+to dobra praktyka obronna.
 
 ---
 
@@ -166,6 +216,18 @@ std::partial_sum(v.begin(), v.end(), prefix.begin());
 // prefix = {1, 3, 6, 10, 15}
 ```
 
+**`accumulate` vs `reduce` — kiedy który i dlaczego kolejność ma znaczenie.**
+`std::accumulate` jest sekwencyjny i deterministyczny: elementy są przetwarzane
+zawsze od lewej do prawej, więc możesz bezpiecznie użyć operacji **niekomutatywnych**
+(np. konkatenacja stringów) i **nieasocjatywnych**. `std::reduce` (C++17) z
+`execution::par` może przetwarzać elementy w **dowolnej kolejności i grupowaniach** —
+dlatego operacja musi być asocjatywna i komutatywna (np. dodawanie int, ale nie
+odejmowanie!). `(a - b) - c ≠ a - (b - c)` — nieasocjatywna operacja w `reduce` daje
+wynik nieokreślony. Dla `float` nawet dodawanie jest nieasocjatywne przez zaokrąglenia
+— wyniki równoległego `reduce` mogą się nieznacznie różnić od `accumulate`. To celowe
+ze strony komitetu: `reduce` to kontrakt „mam asocjatywną operację, maksymalizuj
+równoległość".
+
 ---
 
 ## Slajd 7: Idiom erase-remove
@@ -191,6 +253,17 @@ v.erase(std::remove(v.begin(), v.end(), 2), v.end());
 std::erase(v, 2);                                         // usuń wszystkie 2
 std::erase_if(v, [](int x){ return x % 2 == 0; });       // usuń parzyste
 ```
+
+**Dlaczego `remove` nie usuwa — filozofia algorytmów STL.** `std::remove` nie może
+**fizycznie** usunąć elementów z kontenera, bo algorytmy STL nie znają kontenera —
+mają tylko parę iteratorów i nie mogą wywołać `v.erase()`. `remove` przesuwa elementy
+„do zachowania" na początek zakresu (stabilnie, zachowując ich kolejność) i zwraca
+iterator za ostatnim zachowanym elementem. Elementy za tym iteratorem to
+**nieokreślone śmieci** — nie można na nich polegać. `erase(new_end, v.end())`
+faktycznie zmniejsza rozmiar wektora. Ta dwufazowość jest **intencjonalna**: daje
+elastyczność (możesz sprawdzić ile elementów zostanie usuniętych przed `erase`) i
+utrzymuje czyste oddzielenie między algorytmem a kontenerem. C++20 `std::erase(v, val)`
+to po prostu cukier syntaktyczny owijający idiom.
 
 ---
 
@@ -228,6 +301,17 @@ auto wynik = v
     | std::views::filter([](int x){ return x > 2; })
     | std::views::transform([](int x){ return x * 10; });
 ```
+
+**Execution policies — kiedy warto i kiedy nie.** `std::execution::par` uruchamia
+algorytm na wielu wątkach z puli — ale jest sens tylko gdy praca na każdym elemencie
+jest wystarczająco kosztowna, by zamortyzować koszty synchronizacji. Dla prostego
+`sort` miliona `int` — `par` może być **wolniejsze** niż `seq` z powodu narzutu
+wątków i koordynacji. Kiedy warto: transformacje z kosztowną logiką (np. kompresja,
+szyfrowanie per element), redukcje na dużych zbiorach danych. Kiedy nie warto: małe
+zakresy (< 10k elementów), operacje z IO, lambdy z efektami ubocznymi (wyścigi danych).
+C++20 Ranges `std::ranges::sort(v)` to nie to samo co `std::sort(par, ...)` — Ranges
+nie obsługują jeszcze execution policies (planowane w C++26). Views są leniwe: żaden
+element nie jest przetwarzany dopóki nie iterujesz po `wynik`.
 
 ---
 

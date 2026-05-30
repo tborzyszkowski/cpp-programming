@@ -23,6 +23,14 @@ void free(IntArray* arr)          { delete[] arr->data; }
 - Kod algorytmu był spleciony z typem danych: `sortIntArray`, `sortDoubleArray`...
 - Żaden algorytm nie działał z kodem kogoś innego
 
+**Fragmentacja to nie tylko niedogodność — to fundamentalny problem inżynieryjny.**
+Gdy algorytm sortowania jest zakodowany na konkretną strukturę danych, każda zmiana
+wymagań wymaga **przepisania algorytmu od zera**. Biblioteki z lat 80. były wzajemnie
+niekompatybilne — `SortLib` firmy A nie potrafiła posortować danych z `ContainerLib`
+firmy B. Brak gwarancji złożoności oznaczał, że „szybka" funkcja mogła być O(n²) bez
+ostrzeżenia. STL rozwiązuje te problemy przez separację obowiązków: kontener zarządza
+pamięcią, algorytm realizuje logikę, iterator jest kontraktem między nimi.
+
 ---
 
 ## Slajd 2: Alexander Stepanov i generic programming
@@ -48,6 +56,17 @@ Kluczowy wgląd Stepanova:
 
 Stepanov udowodnił, że **generyczne algorytmy** mogą być równie szybkie jak
 specjalizowane — co było wówczas kontrowersyjną tezą.
+
+**Iterator jako punkt elastyczności.** Geniusz architektury STL polega na tym, że
+iterator jest **jedynym interfejsem** między algorytmem a kontenerem — ani algorytm
+nie zna szczegółów kontenera, ani kontener nie wie nic o algorytmach. Ta separacja
+pozwala dodawać nowe kontenery (działające ze wszystkimi istniejącymi algorytmami)
+i nowe algorytmy (działające ze wszystkimi istniejącymi kontenerami) całkowicie
+niezależnie. Stepanov czerpał inspirację z algebry abstrakcyjnej: algorytm `std::sort`
+wymaga „RandomAccessIterator" — tak jak twierdzenie matematyczne wymaga „pierścienia"
+czy „grupy". Generyczny algorytm z formalnym wymaganiem to dokładnie ta sama idea
+co matematyczny lemat z założeniami. To dlatego STL jest uważany za jedno z
+najpiękniejszych zastosowań teorii typów w inżynierii oprogramowania.
 
 ---
 
@@ -83,6 +102,15 @@ Plus dwa dodatkowe:
 | **C++23** | 2023 | `flat_map/set`, `mdspan`, `print`, rozszerzenia Ranges |
 
 > Biblioteka standardowa liczy dziś **ponad 1500 komponentów** — typów, funkcji i stałych.
+
+**Tempo wzrostu biblioteki odzwierciedla ewolucję potrzeb C++.** C++98 dał fundamenty
+(kontenery, algorytmy), C++11 wprowadził idiomy nowoczesnego C++ (move semantics,
+lambdy, smart pointery). C++17 dodał typy ogólnego użytku eliminujące powszechne
+antywzorce: `optional` zastępuje zwracanie wartości sentinel (`-1`, `nullptr`), `variant`
+zastępuje unie z ręcznym discriminatorem, `filesystem` eliminuje platformo-zależne API.
+C++20 z Ranges to największa zmiana w algorytmach od C++98 — zamiast par iteratorów,
+całe zakresy i kompozycja przez pipe `|`. Każdy nowy standard biblioteki jest wynikiem
+wieloletnich propozycji i dyskusji w komitecie ISO — zmiany są celowe i przemyślane.
 
 ---
 

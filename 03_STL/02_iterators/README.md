@@ -21,6 +21,15 @@ for (auto it = v.begin(); it != v.end(); ++it)
 Koniec zakresu (`end()`) wskazuje **za** ostatnim elementem — nigdy go nie wyłuskujemy.
 Zakres `[begin, end)` to konwencja STL: lewostronnie domknięty, prawostronnie otwarty.
 
+**Dlaczego zakres `[begin, end)` jest otwarty po prawej stronie?** Ta konwencja ma
+kilka matematycznych i praktycznych zalet. Po pierwsze, dla pustego kontenera
+`begin() == end()` — jeden warunek obsługuje przypadek brzegowy. Po drugie, liczba
+elementów to po prostu `end - begin` (dla iteratorów random access). Po trzecie, pętle
+`for (it = begin; it != end; ++it)` działają poprawnie dla dowolnej liczby elementów,
+w tym zero. Alternatywa — zakres domknięty `[begin, last]` — wymagałaby specjalnego
+reprezentowania pustego zakresu i komplikowała arytmetykę. Konwencja ta jest spójna
+z matematyczną notacją przedziałów i stosowana konsekwentnie w całej STL.
+
 ---
 
 ## Slajd 2: Hierarchia kategorii iteratorów
@@ -41,6 +50,16 @@ OutputIterator ─────┘
 | **Bidirectional** | Forward + `--` | `list`, `map`, `set` |
 | **Random Access** | Bidirectional + `+n`, `-n`, `[]`, `<` | `vector`, `deque` |
 | **Contiguous** | Random Access + ciągła pamięć | `vector`, `array`, `string` |
+
+**Hierarchia kategorii a wybór algorytmu.** Każda wyższa kategoria zawiera wszystkie
+operacje niższych — `RandomAccessIterator` jest też `BidirectionalIterator`. Algorytmy
+wymagają **minimalnej** kategorii: `std::sort` wymaga random access (bo potrzebuje
+`it += n`), więc nie zadziała na `std::list`. `std::find` wymaga tylko input iterator,
+więc działa wszędzie. Ta hierarchia to system typów dla iteratorów — przed C++20
+kategoria była zakodowana w `iterator_category` (tag dispatching), w C++20 zastępuje
+ją bardziej precyzyjny system concepts (`std::random_access_iterator<T>`). Praktyczna
+implikacja: gdy przekazujesz `std::list` tam gdzie oczekiwany jest random access, błąd
+kompilacji wskazuje na niezgodność kategorii iteratora.
 
 ---
 
@@ -71,6 +90,15 @@ auto it3 = std::prev(it, 1);    // it - 1 (Bidirectional+)
 std::advance(it, 3);            // przesuń it o 3 w miejscu
 ```
 
+**`std::next`, `std::prev`, `std::advance` — dlaczego istnieją?** Bezpośredni `it += n`
+działa tylko dla random access iterators — dla `std::list` to błąd kompilacji. `std::advance(it, n)`
+działa dla **każdej kategorii**: dla random access to O(1) (kompilator wybiera `+=`),
+dla bidirectional z ujemnym n to O(|n|) powtórzeń `--`, dla forward zawsze O(n) `++`.
+Dispatch odbywa się w czasie kompilacji na podstawie `iterator_category`. `std::distance`
+analogicznie: O(1) dla random access (odejmowanie), O(n) dla pozostałych (liczenie kroków).
+Używanie tych funkcji zamiast bezpośredniej arytmetyki czyni kod **generycznym** — działa
+poprawnie dla każdego kontenera, nawet jeśli później zmienisz `vector` na `list`.
+
 ---
 
 ## Slajd 4: Rodzaje zakresów — `begin`, `end`, warianty
@@ -97,6 +125,15 @@ int arr[] = {4, 5, 6};
 for (auto it = std::begin(arr); it != std::end(arr); ++it)
     std::cout << *it;
 ```
+
+**Wolne funkcje `std::begin`/`std::end` — klucz do generyczności.** Metody `.begin()`
+i `.end()` działają tylko na obiektach klas (kontenery STL). Tablice C (`int arr[5]`)
+nie mają metod, ale mają wolne funkcje `std::begin(arr)`, `std::end(arr)`. Range-based
+for używa właśnie wolnych funkcji — dlatego działa zarówno dla `std::vector`, jak i dla
+zwykłej tablicy C. Możesz zdefiniować `begin()` i `end()` dla własnego typu jako wolne
+funkcje w tej samej przestrzeni nazw (ADL) — range-based for automatycznie je znajdzie.
+C++20 `std::ranges::begin` jest jeszcze bardziej niezawodne: sprawdza metody, potem
+wolne funkcje, obsługuje tablice — jedno wywołanie dla wszystkich zakresów.
 
 ---
 
@@ -125,6 +162,14 @@ for (int& x : v) x *= 2;
 for (const auto& x : v) std::cout << x;
 ```
 
+**Pułapki range-based for.** Trzy częste błędy: (1) pominięcie `&` przy dużych typach
+— `for (auto x : vecStringow)` kopiuje każdy string; pisz `for (const auto& x : ...)`.
+(2) Modyfikacja kontenera podczas iteracji unieważnia iteratory (niezdefiniowane
+zachowanie). (3) `for (auto x : v)` dla `vector<bool>` zwraca proxy zamiast `bool&` —
+`vector<bool>` to specjalizacja używająca bitów, nie zwykłych wartości. Dobra zasada:
+zawsze używaj `const auto&` dla kontenerów z nietrywialnym typem elementów, `auto`
+dla prostych typów liczbowych, `auto&` gdy chcesz modyfikować.
+
 ---
 
 ## Slajd 6: Iteratory unieważnione (dangling iterators)
@@ -149,6 +194,15 @@ std::cout << *it;       // UB!
 | `deque` | `push_front/back` | Wszystkie iteratory |
 | `list`, `map`, `set` | `insert` | Nic |
 | `list`, `map`, `set` | `erase` | Tylko iterator na usuniętym elemencie |
+
+**Unieważnienie iteratorów — najczęstsze źródło UB w STL.** Gdy `vector` realokuje
+pamięć (bo `push_back` przekracza capacity), **wszystkie** istniejące iteratory,
+wskaźniki i referencje stają się wiszące — wskazują na zwolnioną pamięć. Narzędzie
+**AddressSanitizer** (kompilacja z `-fsanitize=address`) wykrywa takie błędy w runtime.
+Bezpieczne wzorce: zapisuj wynik `erase` zamiast używać starego iteratora; jeśli
+potrzebujesz stabilnych iteratorów przez wiele insertów — używaj `list` lub `map`.
+`reserve()` dla `vector` przed serią `push_back` nie tylko przyspiesza kod, ale też
+gwarantuje, że istniejące iteratory pozostaną ważne — bo nie ma realokacji.
 
 ---
 
@@ -178,6 +232,16 @@ for (int x : wynik) std::cout << x << " ";  // kwadraty parzystych
 
 Ranges są **leniwe** — `views::filter` i `views::transform` nie tworzą kopii,
 obliczenia są wykonywane dopiero przy iteracji.
+
+**Ranges zmieniają sposób myślenia o algorytmach.** Zamiast `std::sort(v.begin(), v.end())`
+piszemy `std::ranges::sort(v)` — krótsze i mniej podatne na błąd podania złych iteratorów.
+Ale prawdziwa siła to **kompozycja przez `|`**: każdy `view` to leniwa transformacja,
+a połączenie kilku tworzy pipeline obliczany element po elemencie, bez tymczasowych
+kolekcji. Odpowiednik `v | filter | transform` tradycyjnie wymagał dwóch tymczasowych
+`vector` lub skomplikowanej lambdy z `copy_if` + `transform`. Views nie kopiują danych
+— `views::filter` tworzy obiekt przechowujący referencję do zakresu i predykat;
+element jest obliczany dopiero gdy iterator views zostanie wyłuskany. To model
+analogiczny do generatorów w Pythonie.
 
 ---
 

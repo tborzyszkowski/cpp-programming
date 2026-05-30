@@ -26,6 +26,16 @@ std::string s = "Hi";        // SSO: dane w buforze inline obiektu
 std::string s2 = "To jest już dłuższy tekst..."; // alokacja na stercie
 ```
 
+**SSO — dlaczego krótkie stringi to inne ścieżki kodu.** Każda dynamiczna alokacja
+pamięci (operator `new`) to co najmniej ~50-100 ns — wywołanie do systemu operacyjnego,
+synchronizacja alokatora. SSO eliminuje alokację dla krótkich stringów przechowując
+dane w samym obiekcie `std::string` (zazwyczaj 16-32 bajty na stosie). W libstdc++
+próg to **15 znaków**, w libc++ (clang) **22 znaki**. Oznacza to, że typowe nazwy,
+identyfikatory i krótkie etykiety nie alokują pamięci dynamicznej — cały obiekt żyje
+na stosie. `s.size() <= 15` to wskazówka, że string prawdopodobnie używa SSO, ale nie
+ma standardowego API do sprawdzenia. Konsekwencja: przekazywanie `std::string` przez
+wartość dla krótkich stringów jest tanie — nie jest to kopowanie bufora sterty.
+
 ---
 
 ## Slajd 2: Kluczowe operacje
@@ -56,6 +66,14 @@ s == "Ala ma kota";        // true
 s.compare("Ala");          // > 0 (leksykograficznie)
 ```
 
+**Bezpieczne sprawdzanie wyniku `find` — nie porównuj do `int`!** `std::string::find`
+zwraca `std::string::npos` gdy nie znajdzie wzorca. `npos` to `static const size_t(-1)`,
+czyli maksymalna wartość `size_t` (np. `18446744073709551615` na 64-bit). Błąd: `if (s.find("x") >= 0)` — zawsze true, bo `size_t` jest unsigned! Poprawny wzorzec:
+`if (s.find("x") != std::string::npos)`. C++23 `contains` eliminuje ten problem:
+`if (s.contains("x"))`. `substr(pos, len)` rzuca `std::out_of_range` gdy `pos > size()` —
+zawsze sprawdzaj wynik `find` przed `substr`. `rfind` szuka od końca — para `find` +
+`rfind` umożliwia wyodrębnienie rozszerzenia pliku: `s.substr(s.rfind('.') + 1)`.
+
 ---
 
 ## Slajd 3: Konwersje liczbowe
@@ -84,6 +102,15 @@ try {
 std::string s2 = std::to_string(42);     // "42"
 std::string s3 = std::to_string(3.14);   // "3.140000"
 ```
+
+**`stoi`/`stod` vs `std::from_chars` — wyjątki vs bez-alokacyjna alternatywa.**
+`std::stoi` rzuca `std::invalid_argument` lub `std::out_of_range` — wygodne, ale
+obsługa wyjątków ma koszt przy złych danych. `std::from_chars` (C++17, `<charconv>`)
+to alternatywa **bez wyjątków i bez alokacji**: `auto [ptr, ec] = std::from_chars(s.data(), s.data() + s.size(), i)`. Zwraca `std::errc` zamiast rzucać. Jest też
+szybsza — zaprojektowana dla parsowania w hot-path (np. JSON parser, deserializacja).
+Dla podobnych zastosowań `std::to_chars` zastępuje `to_string` i `sprintf` — formatuje
+bez alokacji, w dostarczonym buforze. Zasada: w kodzie obsługi błędów lub UI — `stoi`
+z try-catch jest czytelniejszy; w kodzie wydajnościowym lub serwerowym — `from_chars`.
 
 ---
 
@@ -117,6 +144,16 @@ std::string_view niebezpieczny() {
 }
 ```
 
+**Typowe pułapki `string_view` — wiszące wskaźniki.** `string_view` to tylko
+wskaźnik + długość — żadna własność. Trzy scenariusze niebezpieczne: (1) **Zwracanie
+`string_view` lokalnego `std::string`** — jak w przykładzie powyżej — string jest
+niszczony na wyjściu z funkcji, view wskazuje na zwolnioną pamięć. (2) **`auto sv = std::string("temp");`** — tworzenie `string_view` z tymczasowym stringiem, który od
+razu jest niszczony (lifetime extension nie działa przez `auto`). (3) **Przechowywanie
+`string_view` po tym jak oryginalny string jest realokowany** przez `push_back` czy
+`resize`. Bezpieczna reguła: `string_view` jako **parametr funkcji** jest zawsze
+bezpieczny (string żyje przed i po wywołaniu); jako **pole klasy lub wartość zwracana**
+— zawsze przemyśl żywotność oryginału.
+
 ---
 
 ## Slajd 5: `std::stringstream` — budowanie i parsowanie
@@ -148,6 +185,17 @@ while (tokeny >> token)
 std::cout << "\n";
 ```
 
+**`stringstream` — kiedy warto, kiedy nie.** `std::stringstream` jest wygodny do
+budowania stringów z wielu wartości różnych typów (`<<` działa dla każdego z `operator<<`).
+Jednak **pełna reinicjalizacja** strumienia (`iss.str(nowy); iss.clear()`) jest
+konieczna przy ponownym użyciu — `clear()` resetuje flagi błędów, `str()` ustawia
+nową zawartość. Tokenizacja `iss >> token` rozdziela po **whitespace** (spacje, tabulacje,
+newline) — dla niestandardowych delimitów używaj `std::getline(iss, token, ';')`.
+Warto też znać `std::format` (C++20) jako alternatywę do budowania stringów — jest
+szybsze od `ostringstream` bo operuje na stałym formacie. Dla krytycznej wydajności
+formatowania stringów: `fmt::format` (biblioteka fmtlib) lub `std::format` to
+wielokrotnie szybsze od `stringstream` i `sprintf`.
+
 ---
 
 ## Slajd 6: C++20 — nowe metody `string`
@@ -173,6 +221,15 @@ sv.starts_with("Hello");  // true
 std::string msg = std::format("Imię: {}, Wiek: {}", "Anna", 30);
 std::cout << msg << "\n";  // Imię: Anna, Wiek: 30
 ```
+
+**`std::format` — type-safe zastępca `printf` i `sprintf`.** `printf("%s ma %d lat", name, age)` jest niebezpieczny: brak sprawdzenia typów w czasie kompilacji, przekazanie
+`int` zamiast `const char*` to UB. `std::format("{} ma {} lat", name, age)` jest
+sprawdzane przez kompilator — niezgodność typów to błąd kompilacji. Format specifiers
+są czytelniejsze: `{:.2f}` zamiast `"%.2f"`, `{:>10}` zamiast `%-10s`. `std::format`
+zwraca `std::string` zamiast pisać do bufora — brak przepełnienia bufora (błąd numer 1
+`sprintf`). `std::print` (C++23) idzie dalej: `std::print("Imię: {}\n", name)` to
+bezpośrednie wypisanie bez tworzenia pośredniego `std::string`, wydajniejsze od
+`std::cout << std::format(...)`.
 
 ---
 
