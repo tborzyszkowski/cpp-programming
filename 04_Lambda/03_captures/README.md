@@ -22,6 +22,13 @@ std::count_if(v.begin(), v.end(), sprawdz); // działa nawet jeśli prog już ni
 Domknięcie = typ domknięcia (klasa) + obiekt domknięcia (instancja).
 Przechwycone zmienne stają się **polami tej klasy**.
 
+**Formalnie:** W teorii języków programowania domknięcie to para `(kod, środowisko)`.
+W C++ „środowiskiem" jest obiekt domknięcia — instancja anonimowej klasy. Kluczowa
+właściwość: domknięcie jest **wartością** — można je kopiować, przechowywać i przekazywać
+jak każdy inny obiekt. Różni się od wskaźnika na funkcję tym, że niesie swój stan ze sobą,
+zamiast polegać na zmiennych globalnych lub dodatkowych parametrach. Kopiowanie domknięcia
+kopiuje cały stan (przechwycone pola) — dwie kopie są od siebie niezależne.
+
 ---
 
 ## Slajd 2: Tryby przechwycenia – przegląd
@@ -66,6 +73,13 @@ std::cout << f2(1);  // 31 – kopie a=10, b=20 z chwili tworzenia
 **Koszt:** Każda przechwycona zmienna jest kopiowana do obiektu domknięcia.
 Dla dużych obiektów to może być drogie → preferuj `[x = std::move(x)]`.
 
+**Semantyka migawki (snapshot):** Przechwycenie przez wartość tworzy **migawkę** stanu
+w momencie tworzenia lambdy. Późniejsze zmiany oryginałów nie wpływają na lambdę —
+jak zdjęcie. Jest to szczególnie ważne w programowaniu współbieżnym: lambda z `[=]`
+niesie własne kopie danych, eliminując wyścigi danych (data races) na zmiennych zewnętrznych.
+Pamiętaj jednak, że kopiowany jest **obiekt** — jeśli przechwycony obiekt zawiera wskaźniki,
+lambda dzieli zasoby wskazywane z oryginałem (płytka kopia, shallow copy).
+
 ---
 
 ## Slajd 4: Przechwycenie przez referencję `[&x]` i `[&]`
@@ -98,6 +112,14 @@ std::cout << "min=" << min_val << " max=" << max_val << "\n";
 - Gdy lambda jest używana natychmiast (nie przechowywana)
 - Gdy obiekt jest duży i kosztowny do kopiowania
 
+**Model aliasingu:** Przechwycenie przez referencję tworzy **alias** do oryginalnej zmiennej
+— modyfikacje przez lambdę są widoczne w oryginalnym scope i odwrotnie. Implementacyjnie
+kompilator przechowuje wskaźnik/referencję w obiekcie domknięcia. Kluczowa konsekwencja:
+oryginalne zmienne **muszą żyć dłużej** niż lambda — jeśli przekazujesz lambdę do funkcji
+lub przechowujesz ją w kontenerze, a oryginalne zmienne zostaną zniszczone wcześniej,
+mamy Undefined Behavior. `[&]` jest bezpieczne dla lambd używanych natychmiast (predykaty STL),
+ryzykowne dla lambd przechowywanych długoterminowo (callbacki, std::function).
+
 ---
 
 ## Slajd 5: Pułapka – wisząca referencja (dangling reference)
@@ -126,6 +148,14 @@ std::cout << g();  // 42 – OK
 ```
 
 **Reguła:** Gdy lambda może przeżyć scope tworzenia → używaj `[=]` lub konkretnych kopii.
+
+**Dlaczego UB, nie błąd kompilacji?** Kompilator nie może w ogólnym przypadku udowodnić,
+że lambda nie przeżyje zmiennych, do których ma referencję — jest to problem nierozstrzygalny
+(analogiczny do halting problem). Dlatego C++ składa odpowiedzialność na programiście.
+Narzędzia takie jak AddressSanitizer (`-fsanitize=address`) wykrywają te błędy w runtime.
+Analizatory statyczne (clang-tidy: `bugprone-dangling-handle`, `cppcoreguidelines-avoid-dangling`)
+mogą wychwycić niektóre wzorce, ale nie wszystkie. W kodzie produkcyjnym: zawsze
+dokumentuj zakładany czas życia lambdy z `[&]`.
 
 ---
 
@@ -156,6 +186,14 @@ for (int i = 0; i < 5; ++i) {
     lambdy3.push_back([val = i](){ return val; });  // jawna kopia
 }
 ```
+
+**Dlaczego pętla z `[&i]` daje błędny wynik?** Wszystkie lambdy przechowują referencję
+do **tej samej zmiennej** `i` — nie do jej wartości z danej iteracji. Po zakończeniu pętli
+`i == 5`, więc wszystkie lambdy zwracają `5`. Jeśli lambdy przeżyją scope for-pętli,
+`i` jest zniszczone i mamy UB. Jest to klasyczny błąd znany też w innych językach
+(JavaScript `var` w pętli z `setTimeout`, Python z `default arguments`). Rozwiązanie:
+przechwytuj zmienną pętli przez wartość `[i]` lub używaj `[val = i]` dla maksymalnej
+jasności intencji — nazwa `val` komunikuje, że to jest konkretna wartość, nie referencja.
 
 ---
 
@@ -201,7 +239,14 @@ ink();  // wartosc_ = 2
 std::cout << c.zrob_info()();   // "klik: 2"
 std::cout << snap();            // "klik: 0" – zamrożony stan
 ```
-
+**Problem z `[this]` w asynchronicznym kodzie:** `[this]` przechwytuje wskaźnik. Jeśli
+obiekt zostanie zniszczony przed wywołaniem callbacku (np. w asynchronicznym I/O, systemach
+zdarzeń GUI, coroutines), dereferencja wskaźnika to UB — często manifestujące się
+trudnymi do debugowania crashami. `[*this]` (C++17) kopiuje **cały obiekt** do domknięcia
+— callback jest bezpieczny niezależnie od czasu życia oryginału, kosztem kopiowania.
+Alternatywa dla kosztownych obiektów: idiom `[self = shared_from_this()]` — lambda
+przedłuża czas życia obiektu przez `shared_ptr`. Wzorzec powszechny w Boost.Asio i
+podobnych bibliotekach asynchronicznych.
 ---
 
 ## Slajd 8: `[=]` vs `[&]` vs lista – dobre praktyki

@@ -40,6 +40,15 @@ auto it = std::find_if(v.begin(), v.end(), [](int x){ return x > 6 && x % 2 == 0
 std::stable_partition(v.begin(), v.end(), [](int x){ return x % 2 == 0; });
 ```
 
+**Dlaczego lambdy są lepsze od nazwanych funkcji dla jednorazowych predykatów?**
+Predykat `[](int a, int b){ return a > b; }` jest zdefiniowany dokładnie tam, gdzie jest
+używany — czytelnik nie musi szukać definicji w innym miejscu. Kompilator widzi pełną
+definicję w momencie instancjonowania szablonu algorytmu i może zinlinować predykat
+do zerowego overhead. Nazwana funkcja jako wskaźnik nie daje tej gwarancji — wywołanie
+odbywa się przez adres. Lambda to też **kapsułka stanu**: gdy predykat potrzebuje
+konfiguracji (progu, wzorca), lambda niesie go w domknięciu — nazwana funkcja musiałaby
+korzystać z globalnego stanu lub dodatkowych parametrów niewidocznych dla algorytmu STL.
+
 ---
 
 ## Slajd 2: Lambdy jako callbacki – systemy zdarzeń
@@ -81,6 +90,14 @@ btn_save.click();  // Oba callbacki wywołane
 btn_save.click();  // Licznik rośnie
 ```
 
+**Wzorzec obserwatora z lambdami vs klasy:** Tradycyjny wzorzec Observer wymaga interfejsu
+`IObserver` z metodą `update()` i osobnej klasy dla każdego handlera. Z lambdami każdy
+handler to anonimowy callable — zero boilerplate'u, handler zdefiniowany w miejscu rejestracji.
+`std::function<void()>` pełni rolę type erasure, pozwalając przechowywać handlery różnych
+typów w jednym wektorze. Koszt: każde wywołanie handlera przez `std::function` to virtual
+dispatch. Dla systemów wysokiej wydajności (silnik gry, real-time audio) rozważ szablonowe
+callbacki lub konkretne wektory lambd tego samego typu.
+
 ---
 
 ## Slajd 3: Lambdy w programowaniu asynchronicznym
@@ -115,6 +132,15 @@ std::cout << fut.get() << "\n";  // 15
 // Uwaga: przy [&] w wątkach – ryzyko data race!
 // Zawsze preferuj przechwycenie przez wartość w wątkach.
 ```
+
+**Model bezpieczeństwa wątkowego z lambdami:** Lambda z `[=]` lub konkretnymi kopiami
+jest **thread-safe by default** — każdy wątek operuje na własnych kopiach danych, bez
+współdzielenia. Lambda z `[&]` wymaga synchronizacji (mutex, atomic) dla każdej
+współdzielonej zmiennej. Podstawowa reguła: traktuj lambdę przekazywaną do `std::async`
+lub `std::thread` jak osobną funkcję działającą w izolacji — wszystkie potrzebne dane
+powinny być skopiowane do domknięcia. Warto też pamiętać, że `std::future::get()` jest
+blokujące — gdy wiele `future` odczytuje wyniki sekwencyjnie, tracisz równoległość.
+Dla prawdziwego równoległego wykonania zapisz wszystkie `future` przed wywołaniem `get()`.
 
 ---
 
@@ -156,6 +182,21 @@ asc_processor.przetworz(v1);   // {1,2,3,5,8}
 desc_processor.przetworz(v2);  // {8,5,3,2,1}
 abs_processor.przetworz(v3);   // wg |x|
 ```
+
+**Lambda-Strategy vs Virtual-Strategy — porównanie:**
+
+| Aspekt | Wirtualne klasy | Lambda / `std::function` |
+|--------|----------------|--------------------------|
+| Boilerplate | interfejs + klasa dla każdej strategii | inline callable |
+| Polimorfizm | runtime (v-table) | runtime (`std::function`) |
+| Overhead wywołania | v-table dispatch | function ptr dispatch |
+| Samodzielność | klasa z nazwą, łatwa do reużycia | anonimowa, lokalna |
+| Stan | pola klasy | przechwycone zmienne |
+| Testowanie | instancja klasy | lambda jako arg testu |
+
+Lambdy nie zastępują wzorca Strategy w pełni — gdy strategia jest złożona, wielokrotnie
+reużywana lub wymaga polimorfizmu przez wskaźnik bazowy, klasy wirtualne mają sens.
+Lambda sprawdza się dla strategii jednorazowych lub konfigurowanych inline.
 
 ---
 
@@ -199,6 +240,13 @@ for (const auto& s : slowa)
 // grupy['a'] = {"anna","agata"}, grupy['b'] = {"bartek","beata"}, ...
 ```
 
+**Lambdy jako komponenty pipeline'u:** Zdefiniowanie `split`, `trim`, `to_upper` jako
+zmiennych z lambdami (zamiast globalnych funkcji) ma kilka zalet: lambdy żyją w tym samym
+scope co ich użycie, można je łatwo parametryzować przez inicjalizatory przechwycenia,
+i mogą być przekazywane jako callable do wyższych rzędów funkcji. Wzorzec ten jest
+szczególnie użyteczny przy ETL (Extract-Transform-Load) i przetwarzaniu strumieniowym:
+każdy krok pipeline'u to lambda, którą można łatwo zamieniać lub testować w izolacji.
+
 ---
 
 ## Slajd 6: Lambdy w dziedzinie grafiki i geometrii
@@ -231,6 +279,14 @@ auto przesuń  = przesuniecie(5, 3);
 std::transform(figura.begin(), figura.end(), figura.begin(),
     [&](Point p){ return przesuń(obrot90(p)); });
 ```
+
+**Fabryki lambd i currying:** Funkcje `obrot`, `przesuniecie` i `skalowanie` to lambdy
+zwracające lambdy — wzorzec currying (częściowe zastosowanie argumentów). `obrot(M_PI/2)`
+oblicza `cos` i `sin` **raz** przy tworzeniu i przechwytuje wyniki, zamiast obliczać je
+przy każdym wywołaniu transformacji. Jest to przykład efektywnego zastosowania domknięć:
+wstępne obliczenie kosztownych wartości jest ukryte w domknięciu, a API transformacji
+pozostaje proste — `transform(figura, obrot90)`. Takie fabryki lambd są idiomem
+popularnym w programowaniu funkcyjnym i bibliotekach geometrii 2D/3D.
 
 ---
 
@@ -271,6 +327,14 @@ uruchom_testy({
 });
 ```
 
+**Lambdy jako test cases:** Każdy test to lambda `bool()` — zwięzła, samodzielna jednostka.
+Framework nie wymaga znajomości klas dziedziczących po `TestCase` ani makr preprocesora.
+Testy tworzone inline w tablicy inicjalizacyjnej są czytelne jak specyfikacja wymagań.
+Warto zauważyć, że lambdy z ciałem wieloliniowym (`Vector sort`, `String upper`) mogą
+zawierać pełen kod przygotowujący (setup) i asercji — bez konieczności osobnych metod
+`setUp()`/`tearDown()`. To wzorzec stosowany w nowoczesnych frameworkach testowych jak
+Catch2, doctest i Google Test (gdzie lambdy można osadzać w `SECTION` blokach).
+
 ---
 
 ## Slajd 8: Lambdy w dziedzinie finansów i analizy danych
@@ -306,3 +370,12 @@ std::sort(portfel.begin(), portfel.end(),
         return (a.cena * a.ilosc) > (b.cena * b.ilosc);
     });
 ```
+
+**Lambdy jako DSL dla zapytań:** Przykład powyżej pokazuje, jak lambdy tworzą swoisty
+język zapytań nad kolekcjami — podobny do SQL: `copy_if` (WHERE), `accumulate` (SUM),
+`max_element` (MAX), `sort` (ORDER BY). Każde kryterium jest wyrażone inline, co ułatwia
+zrozumienie intencji bez skakania po plikach. Klucz do wydajności: zmienna `prog`
+przechwycona przez wartość jest bezpośrednio dostępna w obiekcie domknięcia — kompilator
+może ją wyoptymalizować do rejestru. Powtarzające się wyrażenia `a.cena * a.ilosc` można
+wyeliminować przez `[](const Akcja& a){ return a.cena * a.ilosc; }` jako pomocniczą lambdę,
+demonstrując kompozycję prostych callable w złożone zapytania.

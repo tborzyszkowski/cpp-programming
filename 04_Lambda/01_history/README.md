@@ -25,6 +25,12 @@ qsort(tab, 5, sizeof(int), porownaj_int);
 - Nie można tworzyć ich „w miejscu" — zawsze wymagają osobnej definicji
 - Brak inline'owania przez kompilator (wirtualne wywołanie przez pointer)
 
+Dla algorytmów STL, które przyjmują callable jako parametr szablonu, wskaźnik na funkcję
+oznacza, że kompilator traktuje go jako **nieprzezroczysty adres** znany dopiero w runtime.
+W efekcie `std::sort` z wskaźnikiem na funkcję generuje kod z wywołaniem pośrednim —
+optymalizator nie może zinlinować komparatora. Funktor i lambda rozwiązują ten problem:
+kompilator zna pełny typ w czasie kompilacji i może wyeliminować call overhead całkowicie.
+
 ---
 
 ## Slajd 2: C++98 – klasy funktorowe
@@ -51,8 +57,16 @@ std::vector<int> v = {1, 3, 5, 7, 9, 11};
 int n = std::count_if(v.begin(), v.end(), WiekszyNiz{5});
 ```
 
-Funktory były **dobrim rozwiązaniem** — kompilator może je łatwo inline'ować,
-a stan jest explicite zarządzany. Ale miały poważną wadę:
+Funktory były **dobrym rozwiązaniem** — kompilator może je łatwo inline'ować,
+a stan jest explicite zarządzany.
+
+**Mechanizm optymalizacyjny:** Gdy `std::count_if<WiekszyNiz>` jest instancją szablonu
+z konkretnym typem funktora, kompilator zna pełną definicję `operator()` w miejscu
+wywołania i może ją **całkowicie zinlinować**. Kod wynikowy jest identyczny z ręcznie
+napisaną pętlą — zero overhead wywołania. To fundamentalna przewaga funktorów i lambd
+nad `std::function`, gdzie wywołanie zawsze przebiega przez wskaźnik na funkcję.
+
+Ale miały poważną wadę:
 
 ```cpp
 // Problem: definicja DALEKO od miejsca użycia
@@ -138,6 +152,13 @@ Języki funkcyjne zaczęły implementować lambdy dziesiątki lat przed C++:
 C++ był **jednym z ostatnich** głównych języków, który otrzymał lambdy — ze względu na
 złożoność systemu typów i model pamięci.
 
+Późne pojawienie się lambd w C++ nie wynikało z zaniedbania — to konsekwencja złożoności
+systemu typów. Lambda musi być typem pierwszej klasy, kompatybilnym z szablonami, SFINAE,
+ADL i systemem przeciążania. W językach dynamicznie typowanych (Python, JavaScript) funkcja
+jest obiektem z natury — nie potrzeba specjalnej specyfikacji. W C++ musiano zdefiniować
+zasady anonimowego typu: jego konstruktory kopiowania/przenoszenia, interakcję z dedukcją
+typów szablonów i kompatybilność ze wskaźnikami na funkcje — co zajęło kilka lat pracy komitetu.
+
 ---
 
 ## Slajd 5: Propozycja do standardu – droga do C++11
@@ -207,3 +228,12 @@ auto f = [](int x){ return x * 2; };      // OK – auto deduuje typ domknięcia
 // std::function<int(int)> g = f;          // OK – z kosztem alokacji/wirtualności
 // MojTyp h = f;                           // BŁĄD – nie można nazwać typu domknięcia
 ```
+
+**Dlaczego unikalność typów jest kluczowa dla wydajności?**
+Gdy piszesz `std::sort(v.begin(), v.end(), [](int a, int b){ return a > b; })`, kompilator
+instancjonuje `std::sort` dla **konkretnego**, unikalnego typu komparatora. Znając typ
+statycznie, może zinlinować `operator()` — brak jakiegokolwiek wywołania pośredniego.
+Gdyby wszystkie lambdy miały wspólny typ (`std::function`), inlining byłby niemożliwy:
+wywołanie przechodziłoby przez wskaźnik na wirtualną funkcję. Unikalność typów to
+**świadoma decyzja projektowa**: maksymalna wydajność kosztem niemożności deklarowania
+heterogenicznych kontenerów lambd bez type erasure.

@@ -27,6 +27,13 @@ std::sort(v.begin(), v.end(),
     [](const auto& x, const auto& y){ return x.first < y.first; });
 ```
 
+**Wydajność lambd generycznych:** Każda unikalna kombinacja typów argumentów powoduje
+wygenerowanie oddzielnej instancji `operator()` — kompilator „klonuje" kod dla każdego
+zestawu typów. Jest to **monomorfizacja**: zaletą jest zerowy overhead runtime (pełne
+inlining, optymalizacje pod konkretny typ), wadą — potencjalnie większy rozmiar binarki
+przy wielu różnych kombinacjach typów (code bloat). Dla algorytmów STL, gdzie lambdy
+są często używane jako jednorazowe predykaty, monomorfizacja jest zawsze korzystna.
+
 ---
 
 ## Slajd 2: Lambdy szablonowe (C++20)
@@ -56,6 +63,16 @@ auto tylko_calkowite = []<std::integral T>(T a, T b) { return a + b; };
 tylko_calkowite(3, 4);       // OK
 // tylko_calkowite(1.5, 2.5);  // BŁĄD – double nie jest integral
 ```
+
+**Kiedy `<typename T>` zamiast `auto`?** Użyj jawnego parametru szablonu gdy:
+1. Chcesz **wymusić ten sam typ** dla wielu parametrów — `[]<typename T>(T a, T b)` vs
+   `[](auto a, auto b)` gdzie `a` i `b` są niezależnymi typami
+2. Potrzebujesz **użyć T w ciele** lambdy — do deklaracji zmiennych `T tmp;`
+3. Chcesz **ograniczyć T konceptem** explicite i komunikować intencję (`<std::integral T>`)
+4. Potrzebujesz **dostępu do T** przez `sizeof(T)`, `std::is_same_v<T, X>` itp.
+
+Lambda z `auto a, auto b` to `template<typename A, typename B>` — A i B są niezależne,
+więc `rowne(1, 2.0)` się skompiluje, co może być niepożądane.
 
 ---
 
@@ -96,6 +113,15 @@ std::cout << wynik;  // ((5*2)+10)^2 = 400
 // → Używaj auto zamiast std::function gdy to możliwe
 ```
 
+**Szczegóły implementacji SBO (Small Buffer Optimization):** Większość implementacji
+`std::function` (libstdc++, libc++, MSVC STL) przechowuje małe callable (≤16–32 bajty)
+bezpośrednio w wewnętrznym buforze — bez alokacji sterty. Lambda bez przechwycenia lub
+z kilkoma prostymi polami mieści się w SBO. Lambda przechwytująca duże obiekty (np.
+`std::string`, `std::vector`) przekroczy bufor i spowoduje alokację sterty. Co ważne,
+**nawet z SBO** wywołanie przez `std::function` przechodzi przez wskaźnik na funkcję
+(mechanizm podobny do virtual dispatch), co uniemożliwia inlining. Dlatego `auto` jest
+zawsze preferowane, gdy typ można wydedukować — zachowujesz zero overhead abstrakcji.
+
 ---
 
 ## Slajd 4: Rekurencyjna lambda
@@ -114,6 +140,15 @@ auto silnia2 = [](auto self, int n) -> int {
     return n <= 1 ? 1 : n * self(self, n - 1);
 };
 std::cout << silnia2(silnia2, 10);  // 3628800
+
+**Dlaczego rekurencja jest trudna dla lambd?** Lambda nie ma nazwy dostępnej w swoim
+ciele — jest wyrażeniem, które tworzy obiekt. W momencie definiowania ciała lambda
+nie istnieje jeszcze jako zmienna. `[&silnia]` działa, ale `silnia` musi mieć typ
+`std::function` (jedyny sposób na nazwany callable w tym momencie), co wprowadza
+overhead virtual dispatch. Sposób `self(self, n-1)` to uproszczona forma kombinatora Y
+(Y-combinator) z rachunku lambda — obchodzi problem przez przekazanie funkcji jako
+parametru. Kompilator dedukuje typ `self` statycznie, może zinlinować rekursję: zero overhead.
+C++23 dedukcja `this` jest najelegantszą odpowiedzią na ten problem w historii języka.
 
 // Sposób 3 (C++23): dedukcja this – najelegantszy
 // auto silnia3 = [](this auto self, int n) -> int {

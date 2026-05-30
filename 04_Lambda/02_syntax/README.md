@@ -9,6 +9,13 @@
        ①               ②              ③              ④            ⑤
 ```
 
+Każdy element składni ma swój powód istnienia. **Lista przechwycenia** `[]` jest jedynym
+obowiązkowym elementem — jawna deklaracja, co lambda „bierze" ze środowiska. Komitet C++
+celowo wymusił jawność: zmniejsza to ryzyko przypadkowego przechwycenia dużych obiektów
+lub tworzenia wiszących referencji. **Parametry** i **typ zwracany** są opcjonalne dzięki
+dedukcji typów. **Specyfikatory** (`mutable`, `constexpr`, `noexcept`) modyfikują semantykę
+generowanego `operator()`.
+
 | Element | Wymagany | Opis |
 |---------|----------|------|
 | `[ przechwycenie ]` | **TAK** | Co przechwycić z otaczającego scope'u |
@@ -57,6 +64,13 @@ int n = 5;
 Pozwala kompilatorowi generować optymalny kod — każda lambda jest własną klasą
 z możliwością pełnego inline'owania, bez overhead'u tablic wirtualnych.
 
+**Praktyczna implikacja:** Jeśli masz dwie lambdy o identycznym kodzie, ich typy są różne
+i nie można ich zamiennie używać bez `std::function`. Oznacza to też, że kontener
+`std::vector<[typ lambdy]>` jest niemożliwy do zadeklarowania bez `auto` lub type erasure.
+Jest to celowy trade-off: unikalność typów umożliwia pełne inlinowanie w szablonach
+(każda instancja szablonu dla innej lambdy jest oddzielnie optymalizowana), kosztem
+niemożności tworzenia jednorodnych kolekcji lambd bez wspólnego interfejsu.
+
 ---
 
 ## Slajd 3: Dedukcja typu zwracanego
@@ -91,6 +105,12 @@ auto f5 = [](int x) -> double {
 auto f6 = [](int x){ std::cout << x; };      // deduuje void
 ```
 
+**Reguła dedukcji:** Kompilator stosuje zasadę `decltype(auto)` do ciała lambdy —
+identyczną regułę jak dla funkcji z `auto` typem zwracanym (C++14). Gdy lambda ma
+wiele instrukcji `return`, wszystkie muszą zwracać dokładnie ten sam typ lub być
+niejawnie konwertowalne do wspólnego — w przeciwnym razie kompilator zgłosi błąd.
+Jawne `-> typ` pozwala na niejawne konwersje i jednoznacznie komunikuje zamiar programisty.
+
 ---
 
 ## Slajd 4: Specyfikator `mutable`
@@ -122,6 +142,14 @@ std::cout << licznik();  // 1
 std::cout << licznik();  // 2
 std::cout << licznik();  // 3
 ```
+
+**Model semantyczny `mutable`:** Lambda bez `mutable` generuje `operator() const` — wszystkie
+pola domknięcia są traktowane jako `const`. Dodanie `mutable` usuwa ten kwalifikator,
+generując niekonst `operator()`. Ważne: `mutable` dotyczy wyłącznie **kopii** zmiennych
+w domknięciu, nie oryginalnych zmiennych ze scope'u zewnętrznego. Dlatego jest użyteczny
+do implementacji liczników, generatorów i stanowych iteratorów — stan żyje w domknięciu,
+nie w zmiennych zewnętrznych. Bez `mutable` taki licznik byłby niemożliwy przy przechwyceniu
+przez wartość.
 
 ---
 
@@ -172,6 +200,14 @@ struct Dodaj {
 auto tylko_liczby = []<std::integral T>(T a, T b) { return a + b; };
 ```
 
+**Mechanizm monomorfizacji:** Parametr `auto a` to skrótowy zapis szablonowego `operator()`.
+Każde wywołanie z nowymi typami tworzy **oddzielną instancję szablonu** — tak samo jak
+jawny `template<typename A, typename B>`. `dodaj(1, 2)` i `dodaj(1.5, 2.5)` generują dwie
+różne funkcje w kodzie maszynowym, każda optymalnie skompilowana dla swoich typów.
+To **monomorfizacja** — pełna wydajność (inlining, brak boxing) kosztem potencjalnie
+większej binarki przy wielu kombinacjach typów. Warto pamiętać, że `auto a, auto b` to
+**dwa niezależne** parametry szablonu — dla wymuszenia tego samego typu użyj `[]<typename T>(T a, T b)`.
+
 ---
 
 ## Slajd 7: Operator wywołania – kiedy lambda jest wywoływana
@@ -199,6 +235,13 @@ void zastosuj_sf(std::function<int(int)> func, int x) {
 }
 ```
 
+**Zero-overhead abstraction:** Każde wywołanie `zastosuj` z inną lambdą tworzy osobną
+instancję szablonu. Kompilator generuje wyspecjalizowaną wersję `zastosuj` z w pełni
+zinlinowanym `func(x)` — dosłownie taką samą jak kod bez lambdy. Jest to wzorcowy
+przykład zasady „zero-overhead abstractions" Bjarne'a Stroustrupa: lambdy w szablonach
+nie kosztują nic w runtime. Wersja ze `std::function` traci tę właściwość: każde
+wywołanie wymaga dereferencji wskaźnika, uniemożliwiając optymalizatorowi wgląd w ciało.
+
 ---
 
 ## Slajd 8: Inicjalizatory przechwycenia (C++14)
@@ -224,3 +267,11 @@ auto k = [s = std::move(name)](){ return s; };  // move – name jest puste po t
 // Generowanie stanu:
 auto licznik = [i = 0]() mutable { return i++; };
 ```
+
+**Inicjalizatory przechwycenia** rozwiązują dwa problemy naraz. Po pierwsze, umożliwiają
+przechwycenie typów niemożliwych do skopiowania (jak `unique_ptr`) przez `std::move` —
+co było niemożliwe zwykłym `[ptr]`. Po drugie, pozwalają transformować lub nadać
+przechwyconemu elementowi inną nazwę niż zmienna zewnętrzna, poprawiając czytelność.
+Wyrażenie inicjalizatora jest obliczane **w miejscu tworzenia lambdy** (nie przy wywołaniu),
+co czyni je analogicznym do listy inicjalizatorów konstruktora. Przy `std::move` warto
+pamiętać: po stworzeniu lambdy oryginalna zmienna jest w stanie moved-from (pustym).
