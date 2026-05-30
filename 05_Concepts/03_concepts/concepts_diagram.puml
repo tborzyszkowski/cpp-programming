@@ -1,0 +1,55 @@
+@startuml concepts_diagram
+
+skinparam backgroundColor #FAFAFA
+skinparam shadowing false
+skinparam classBackgroundColor #EEF2FF
+skinparam classBorderColor #4A5AE0
+
+title C++20 Concepts – Struktura i Relacje
+
+package "Definicja Concept" {
+    class "concept Nazwa" as CDEF {
+        template<typename T>
+        concept C = requires(T x) {
+          wyrażenie_proste;
+          { expr } -> same_as<T>;
+          typename T::nested;
+        }
+    }
+}
+
+package "Zastosowanie" {
+    class "template<C T>" as USE1
+    class "requires C<T>" as USE2
+    class "C auto x" as USE3
+}
+
+package "Wbudowane <concepts>" {
+    class "integral / floating_point" as NUM
+    class "same_as / convertible_to" as CONV
+    class "movable / copyable / regular" as OBJ
+    class "invocable<F,Args>" as CALL
+    class "ranges::range<T>" as RNG
+}
+
+CDEF --> USE1 : "użycie\npo typename"
+CDEF --> USE2 : "klauzula\nrequires"
+CDEF --> USE3 : "abbreviated\nfunction template"
+
+NUM --> CDEF : "subsumpcja\n(hierarchia)"
+OBJ --> CDEF
+CONV --> CDEF
+RNG --> CALL
+
+note bottom of USE3
+  // Najkrótszy zapis:
+  auto f(integral auto x) {}
+end note
+
+note right of CDEF
+  Subsumpcja: bardziej szczegółowy
+  concept wygrywa przy przeciążeniu
+  unsigned_integral ⊆ integral
+end note
+
+@enduml

@@ -1,0 +1,45 @@
+@startuml duck_typing_diagram
+
+skinparam backgroundColor #FAFAFA
+skinparam shadowing false
+
+title Duck Typing w C++ – Statyczny vs Dynamiczny
+
+package "Dynamiczny Duck Typing\n(Python, Ruby)" as DYN {
+    class "Klasa A" as A {
+        dzwiek()
+    }
+    class "Klasa B" as B {
+        dzwiek()
+    }
+    note "Sprawdzanie w RUNTIME\nAttributeError jeśli brak metody" as DN
+}
+
+package "Statyczny Duck Typing\n(C++ Templates pre-C++20)" as STA {
+    class "template<T>\nvoid f(T x)" as TF {
+        x.begin()
+        x.end()
+    }
+    note "Niejawny kontrakt\nBłąd w instancjacji szablonu\n50+ linii błędu" as SN
+}
+
+package "Strukturalny + Kontrakt\n(C++ Concepts C++20)" as CON {
+    interface "concept Kontener" as CC {
+        begin()
+        end()
+        size()
+        value_type
+    }
+    class "std::vector<T>" as VV
+    class "std::string" as SS
+    class "CustomType" as CT
+
+    CC <|.. VV : spełnia
+    CC <|.. SS : spełnia
+    CC <|.. CT : spełnia
+    note "Jawny kontrakt\nBłąd w miejscu wywołania\nCzytelny komunikat" as CN
+}
+
+STA -right-> CON : C++20 ulepsza
+
+@enduml

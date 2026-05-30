@@ -1,0 +1,42 @@
+@startuml modules_diagram
+
+skinparam backgroundColor #FAFAFA
+skinparam shadowing false
+
+title C++20 Moduły – Struktura i Kompilacja
+
+package "System nagłówków (legacy)" as HDR {
+    file "math.h" as MH
+    file "main.cpp" as MC1
+    file "other.cpp" as OC
+    note "Kopiowanie kodu do każdego .cpp\nMakra wyciekają\nKolizje nazw" as HN
+}
+
+MH ..> MC1 : "#include\n(kopia tekstu)"
+MH ..> OC  : "#include\n(kopia tekstu)"
+
+package "System modułów (C++20)" as MOD {
+    file "math.cppm\nexport module math;" as CPPM
+    file "math.bmi\n(precompiled)" as BMI
+    file "main.cpp\nimport math;" as MC2
+    file "other.cpp\nimport math;" as OC2
+
+    CPPM --> BMI : "kompilacja\n(raz!)"
+    BMI --> MC2  : "import\n(szybko)"
+    BMI --> OC2  : "import\n(szybko)"
+
+    note "Symbole nieeksportowane ukryte\nBrak wycieku makr\nSzybsza kompilacja" as MN
+}
+
+package "Partycje" as PART {
+    file "geom:shapes" as S
+    file "geom:algos" as A
+    file "geometry\n(re-export)" as G
+    file "main.cpp" as PM
+
+    S --> G : "export import :shapes"
+    A --> G : "export import :algos"
+    G --> PM : "import geometry"
+}
+
+@enduml

@@ -1,0 +1,67 @@
+@startuml history_diagram
+
+skinparam backgroundColor #FAFAFA
+skinparam shadowing false
+skinparam rectangle {
+    BackgroundColor #EEF2FF
+    BorderColor #4A5AE0
+}
+skinparam note {
+    BackgroundColor #FFFDE7
+    BorderColor #FBC02D
+}
+skinparam arrow {
+    Color #4A5AE0
+}
+
+title Ewolucja Programowania Generycznego
+
+rectangle "Makra\n#define MAX(a,b)\n(lata 70./80.)" as macros #FEE2E2
+rectangle "void*\nqsort, bsearch\n(C89)" as voidptr #FEF3C7
+rectangle "Szablony\nC++98\ntemplate<T>" as tmpl98 #D1FAE5
+rectangle "SFINAE\n+ type_traits\nC++11" as sfinae #DBEAFE
+rectangle "Variadic\n+ if constexpr\nC++11/17" as variadic #EDE9FE
+rectangle "Concepts\n(C++20)\nconcept/requires" as concepts #FCE7F3
+
+macros -right-> voidptr : brak\ntypów
+voidptr -right-> tmpl98 : niebezpieczny\ncast
+tmpl98 -right-> sfinae : straszne\nbłędy kompilacji
+sfinae -right-> variadic : trudna\nskładnia
+variadic -right-> concepts : niejawne\nkontrakty
+
+note bottom of macros
+  Brak sprawdzania typów
+  Efekty uboczne
+  Brak zasięgu
+end note
+
+note bottom of tmpl98
+  Generowanie kodu dla T
+  Pełna optymalizacja
+  Błędy w miejscu użycia
+  (nie definicji)
+end note
+
+note bottom of sfinae
+  Substitution Failure
+  Is Not An Error
+  enable_if, void_t
+  Czytelność: niska
+end note
+
+note bottom of concepts
+  Jawne kontrakty typów
+  Czytelne błędy kompilacji
+  Overload resolution
+  C++20 requires {}
+end note
+
+rectangle "Inspiracje" as insp #FFFDE7
+note right of insp
+  Ada (1983): generic packages
+  ML/Haskell: type classes
+  Eiffel: constrained generics
+  Stepanov: generic algorithms
+end note
+
+@enduml

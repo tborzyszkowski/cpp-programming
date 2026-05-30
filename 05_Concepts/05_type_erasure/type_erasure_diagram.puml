@@ -1,0 +1,67 @@
+@startuml type_erasure_diagram
+
+skinparam backgroundColor #FAFAFA
+skinparam shadowing false
+skinparam classBackgroundColor #EEF2FF
+skinparam classBorderColor #4A5AE0
+
+title Type Erasure – Techniki i Relacje
+
+package "Problem" {
+    class "Lambda A" as LA
+    class "Lambda B" as LB
+    class "Funktor" as FU
+    class "Funkcja" as FN
+    note "Różne typy!\nNie można wrzucić do jednego kontenera" as PN
+}
+
+package "Rozwiązania Type Erasure" {
+    class "std::function<Sig>" as SF {
+        +operator()(args): Ret
+        Przechowuje dowolny callable
+        SBO lub heap
+    }
+    class "std::any" as SA {
+        +any_cast<T>()
+        Przechowuje dowolny typ
+        SBO lub heap
+    }
+    class "std::variant<Ts...>" as SV {
+        +visit(visitor)
+        Zamknięta lista typów
+        Zawsze na stosie!
+    }
+    class "virtual dispatch\n+ wskaźnik" as VD {
+        +pole() = 0
+        +rysuj() = 0
+        Otwarta hierarchia klas
+    }
+    class "Własne Type Erasure\n(Model/Concept)" as CTE {
+        +wartościowa semantyka
+        +bez dziedziczenia w API
+        +opcjonalne SBO
+    }
+}
+
+LA --> SF : "przechowywane w"
+LB --> SF
+FU --> SF
+FN --> SF
+
+SF ..> SV : "vs\n(znane typy)"
+SF ..> SA : "vs\n(dowolny typ)"
+VD ..> CTE : "zastąpione przez\n(bez wirt. w API)"
+
+note bottom of SV
+  Zero overhead
+  std::visit sprawdza
+  kompletność case'ów
+end note
+
+note bottom of SF
+  Small Buffer Optimization:
+  małe obiekty bez alokacji
+  duże: heap + pointer
+end note
+
+@enduml

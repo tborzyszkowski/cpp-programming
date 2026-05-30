@@ -1,0 +1,48 @@
+@startuml templates_diagram
+
+skinparam backgroundColor #FAFAFA
+skinparam shadowing false
+skinparam classBackgroundColor #EEF2FF
+skinparam classBorderColor #4A5AE0
+
+title Mechanizmy Szablonów C++
+
+package "Parametry szablonu" {
+    class "Typ\ntemplate<typename T>" as TP
+    class "Wartość\ntemplate<int N>" as NTP
+    class "Szablon\ntemplate<template<T> class C>" as TTP
+}
+
+package "Specjalizacja" {
+    class "Pełna\ntemplate<>" as FULL
+    class "Częściowa\ntemplate<T*>" as PARTIAL
+}
+
+package "SFINAE / C++17" {
+    class "enable_if<cond,T>" as EI
+    class "void_t<expr>" as VT
+    class "if constexpr" as IC
+    class "type_traits" as TT
+}
+
+package "Variadic" {
+    class "template<Ts...>" as VAR
+    class "fold expressions\n(C++17)" as FOLD
+    class "sizeof...(Ts)" as SIZEOF
+}
+
+TP --> FULL
+TP --> PARTIAL
+FULL --> EI : "specjalizuj"
+TT --> EI
+TT --> VT
+EI --> IC : "zastąpione przez"
+VAR --> FOLD
+VAR --> SIZEOF
+
+note right of IC
+  C++17: prostsze niż SFINAE
+  C++20: Concepts jeszcze prostsze
+end note
+
+@enduml
