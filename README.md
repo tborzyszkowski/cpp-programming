@@ -1,4 +1,10 @@
-[![AI Co-Authored](https://badgen.net)](https://github.com)
+<p align="left">
+  <a href="https://github.com">
+    <kbd style="background-color: #0056b3; color: white; padding: 5px 10px; border-radius: 4px; font-weight: bold; border: none; font-family: sans-serif; font-size: 13px;">🤖 AI-Assisted</kbd>
+    <kbd style="background-color: #6c757d; color: white; padding: 5px 10px; border-radius: 4px; font-weight: bold; border: none; font-family: sans-serif; font-size: 13px;">Edukacja</kbd>
+  </a>
+</p>
+
 
 # cpp-programming
 
