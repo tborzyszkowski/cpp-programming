@@ -60,3 +60,14 @@ XX_NazwaModułu/
 ```
 
 Moduł `01_OOP/02_unit_tests` zawiera dodatkowo pełne środowisko CMake + Google Test.
+
+## Wykorzystanie AI w materiałach
+
+Materiały dydaktyczne zawarte w tym repozytorium są przygotowywane przy wsparciu narzędzi sztucznej inteligencji (Generative AI), które pełnią rolę asystenta twórcy. 
+
+Sztuczna inteligencja jest wykorzystywana w celach pomocniczych, w szczególności do:
+* Współtworzenia i optymalizacji bazowych przykładów kodu oraz konfiguracji (np. CMake).
+* Formatowania, strukturyzacji oraz automatyzacji generowania dokumentacji (Markdown/PlantUML).
+* Wsparcia procesu redakcyjnego, korekty językowej oraz generowania alternatywnych wyjaśnień pojęć technicznych.
+
+Wszystkie materiały, schematy oraz kody źródłowe podlegają **weryfikacji merytorycznej i edycji przez człowieka**. Ostateczna treść oraz układ dydaktyczny są wynikiem autorskiego nadzoru, co zapewnia ich poprawność oraz zgodność ze standardami akademickimi.
