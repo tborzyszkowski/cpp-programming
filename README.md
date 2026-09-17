@@ -1,6 +1,7 @@
+[![AI Co-Authored](https://shields.io)](https://github.com)
+
 # cpp-programming
 
-[![AI Co-Authored](https://shields.io)](https://github.com)
 Materiały dydaktyczne do zajęć z programowania w C++.
 Każdy moduł zawiera slajdy w formacie Markdown, przykłady kodu źródłowego oraz diagramy PlantUML.
 
