@@ -1,4 +1,4 @@
-[![AI Co-Authored](https://shields.io)](https://github.com)
+[![AI Co-Authored](https://badgen.net)](https://github.com)
 
 # cpp-programming
 
